@@ -1,0 +1,223 @@
+#!/usr/bin/python3
+#                                       ++++++++++++++++++
+#                                  +++++++++++++++++++++++++++++
+#                             +++++++                      +++++++++
+#                          +++++++                               +++++++++++++
+#         ++++++++++++++++++++                                         ++++++++++
+#    +++++++++++++++++++++                                                     +++
+#   +++++                                                                       +++
+#  +++         ######### ######### ########  #########  #########   +++++++      ++
+#  +++  +++++ ####  #### ######## ####  #### ##### #### #### ####  +++  ++++    +++
+#  +++   ++++ ###     ## ###      ###    ### ###    ### ###    ### ++++++++   +++
+#   ++++ ++++ ########## ###      ########## ###    ### ###    ### ++++    +++++
+#    +++++++   ###### ## ###       ########  ###     ## ##     ###  ++++++++++
+#
+# Vehicle to Outside World Module
+# ===============================
+#
+# Main application to offer a JSON interface to the outside world.
+#
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+#
+import select, sys, getopt, socket, time, json
+from curses import wrapper
+from vehicleif import Vehicle
+from display import Display
+
+# System wide variable dictionary
+config={"verbose":False,
+        "servaddr":"0.0.0.0",
+        "servport":6282,
+        "commport":"/dev/ttyAMA0",
+        "speed":115200,
+        "icarus31n1":False,
+        "d":None}
+
+# Types of lights that are supported
+NOLIGHTS=0
+HEADLIGHTS=1
+BRAKES=2
+INDL=4
+INDR=8
+HIGHBEAM=16
+MAXLIGHTS=(HEADLIGHTS|BRAKES|INDL|INDR)
+
+flashtable={
+    "indl": (0.4,0.4),
+    "indr": (0.4,0.4)
+    }
+
+# Entries further down this list override ones further up
+light={"headlights":([6,80,0,0],[4,0,0,80],[0,80,80,80],[2,80,80,80]),
+       "highbeam":([6,80,0,0],[4,0,0,80],[0,255,255,255],[2,255,255,255]),
+        "brakes":( [6,255,0,0],[4,0,0,255]),
+        "indr":( [1,255,32,0],[5,0,32,255]),
+        "indl":( [3,255,32,0],[7,255,32,0])
+        }
+
+# -----------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+
+class NWServer:
+    """A simple UDP network server."""
+    
+    def __init__(self, config):
+        self.config=config
+        self.comm = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.comm.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.comm.bind((self.config["servaddr"],self.config["servport"]))
+        self.comm.setblocking(0)
+        
+    def recv(self):
+        r=self.comm.recv(2048)
+        if len(r)==0:
+            return None
+        return r
+
+    def close(self):
+        self.comm.close()
+        self.comm=None
+
+    def fileno(self):
+        # This is needed to allow it to participate in a select
+        return self.comm.fileno()
+    
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+def runloop(stdscr):
+    mismatched=0
+
+    # We only create a display if we've been asked to be verbose....
+    if (config["verbose"]):
+        config["d"]=Display(stdscr)
+        config["d"].addLog("Server address is "+config["servaddr"]+":"+str(config["servport"]))
+        config["d"].addLog("Local commPort is "+config["commport"])
+
+    v=Vehicle(config)
+    s=NWServer(config)
+
+    # Establish initial state of output variables
+    ctrlstate=dict((k,opvars[k]["def"]) for k in opvars)
+
+    # Main loop - just sit on a select call and dispatch in response
+    lastUpdate=time.time()
+    lightUpdate=0
+    
+    while (1):
+        avail_read,avail_write,avail_error=select.select([v,s],[],[],0.05)
+
+        if (v in avail_read):
+            v.doRead()
+            updated=v.getUpdated()
+
+            if ("steer" in updated) and (ctrlstate["steer"]!=v.getState()["steer"]["angle"]):
+                v.setServo(0,ctrlstate["steer"])
+
+            if ("motor" in updated) and (ctrlstate["motor"]!=v.getState()["motor"]["speed"]):
+                v.setSpeed(ctrlstate["motor"])
+
+        if (s in avail_read):
+            recvString=s.recv()
+            if (recvString):
+                try:
+                    ctrlstatepend=json.loads(recvString.decode("utf-8"))
+#                    if (ctrlstatepend["sn"]<(ctrlstate["sn"])):
+#                        mismatched+=1
+#                        if (config["verbose"]):
+#                          config["d"].addLog("Mismatched seqno: Incoming="+str(ctrlstatepend["sn"])+" Held="+str(ctrlstate["sn"]))
+#                        if (mismatched<20):
+#                            continue
+#                            
+#                        if (config["verbose"]):
+#                            config["d"].addLog("Sequence number reset")
+#                    else:
+#                        mismatched=0
+
+                    if (ctrlstate["steer"]!=ctrlstatepend["steer"]):
+                        v.setServo(0,ctrlstatepend["steer"])
+
+                    if (ctrlstate["motor"]!=ctrlstatepend["motor"]):
+                        v.setSpeed(ctrlstate["motor"])
+
+                    # Setting lightUpdate to zero forces an update immediately
+                    if (ctrlstate["lights"]!=ctrlstatepend["lights"]):
+                        lightUpdate=0
+                        if (ctrlstatepend["lights"]&(INDL|INDR)):
+                            flashStart=time.time()
+                        
+                    ctrlstate=ctrlstatepend
+                except ValueError:
+                    pass
+
+        # Update any light settings that need attention
+        if ((time.time()-lightUpdate>=0.1) and ("lights" in ctrlstate)):
+            v.ledClear()
+            if (ctrlstate["lights"]&HEADLIGHTS):
+                v.ledSet(light["headlights"])
+            if (ctrlstate["lights"]&HIGHBEAM):
+                v.ledSet(light["highbeam"])
+            if (ctrlstate["lights"]&BRAKES):
+                v.ledSet(light["brakes"])
+            if ((ctrlstate["lights"]&INDL) and
+                ((time.time()%(flashtable["indl"][0]+flashtable["indl"][1]))<=flashtable["indl"][0])):
+                v.ledSet(light["indl"])                        
+            if ((ctrlstate["lights"]&INDR) and
+                ((time.time()%(flashtable["indr"][0]+flashtable["indr"][1]))<=flashtable["indr"][0])): 
+                v.ledSet(light["indr"])
+            v.ledPrint()
+            lightUpdate=time.time()
+            
+            
+        if ((config["verbose"]) and (time.time()-lastUpdate>0.1)):
+            config["d"].doUpdate(v.getState(),ctrlstate)
+            lastUpdate=time.time()
+
+
+# The output variables we support 
+opvars={
+    "motor"   : { "min":100, "max":-100, "def": 0 },
+    "steer"   : { "min":0,   "max":1000, "def":500 },
+    "lights"  : { "min":0,   "max":MAXLIGHTS,    "def":NOLIGHTS },
+    "sn"      : { "min":0,   "max":0,    "def":0 }
+}
+
+# ==================================================
+def main(argv):
+    global config
+   
+    try:
+        opts, args = getopt.getopt(argv,"hvc:s:p:i",["verbose","commport=","servaddr=","servport=","icarus31n1"])
+    except getopt.GetoptError:
+        print(argv[0],' -c <commport> -s <servaddr> -p <servport> -i')
+        sys.exit(2)
+    for opt, arg in opts:
+        if opt == '-h':
+            print(argv[0],' -c <commport> -s <servaddr> -p <servport>')
+            sys.exit()
+        elif opt in ("-c", "--commport"):
+            config["commport"] = arg
+        elif opt in ("-s", "--servaddr"):
+            config["servaddr"] = arg
+        elif opt in ("-v", "--verbose"):
+            config["verbose"]=True
+        elif opt in ("-p", "--servport"):
+            config["servport"] = arg
+        elif opt in ("-i", "--icarus31n1"):
+            config["icarus31n1"] = True
+
+    # If we're running with the display on then run in wrapper
+    if (config["verbose"]):
+        wrapper(runloop)
+    else:
+        runloop(None)
+        
+# ==================================================
+if __name__ == "__main__":
+    main(sys.argv[1:])
+# ==================================================

@@ -1,0 +1,520 @@
+#!/usr/local/bin/python3
+
+import serial, io, fileinput, time, sys, getopt
+import binascii
+import os
+import time
+import socket
+import select
+import json
+import ctypes
+import fcntl
+import evdev
+import math
+import glob
+import evdev.ff
+
+from evdev import _input
+from evdev import InputDevice,categorize
+
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+
+class Controller:
+    GAINSET=99
+
+    EV_LED=0x11
+    EV_FF=0x15
+
+    # FF Device Properties
+    FF_GAIN=0x60
+    FF_AUTOCENTER=0x61
+
+    # FF Directions
+    FF_DIR_NORTH=0x8000
+    FF_DIR_SOUTH=0
+    FF_DIR_EAST=0xC000
+    FF_DIR_WEST=0x4000
+    
+    # FF Effect Types
+    FF_RUMBLE=0x50
+    FF_PERIODIC=0x51
+    FF_CONSTANT=0x52
+    FF_SPRING=0x53
+    FF_FRICTION=0x54
+    FF_DAMPER=0x55
+    FF_INERTIA=0x56
+    FF_RAMP=0x57
+
+    # FF Periodic Effect Types
+    FF_SQUARE=0x58
+    FF_TRIANGLE=0x59
+    FF_SINE=0x5a
+    FF_SAW_UP=0x5b
+    FF_SAW_DOWN=0x5c
+    FF_CUSTOM=0x5d
+    
+    # Magic number for ioctl for FF...this would need to change for 32 bits!
+    EVIOCSFF=0x40304580
+
+    class Ev(ctypes.Structure):
+        _fields_ = [
+            ('times', ctypes.c_uint64),
+            ('timeus', ctypes.c_uint64),         
+            ('type', ctypes.c_uint16),
+            ('code', ctypes.c_uint16),
+            ('value', ctypes.c_int32)
+        ]
+        
+
+    # Different vehice types and their characteristics
+    characteristics=[
+        { "name":"Sponge", "gain": 1, "deadzone": 0, "autocenter": 0x0 },
+        { "name":"Truck", "gain": 2, "deadzone": 0.2, "autocenter": 0x5000 },
+        { "name":"Saloon", "gain": 3, "deadzone": 0.1, "autocenter": 0x8000 },
+        { "name":"goKart", "gain": 10, "deadzone": 0.0, "autocenter" :0xFFFF }
+        ]
+
+    # Currently active characteristics entry
+    currentC=0
+    
+    # The control outputs we support and their default values
+    controls={
+        "accel":0.5,
+        "wheel":0.5,
+        "brake":0.5,        
+        "ind":0,
+        "beam":0
+        }
+
+    # The set of controllers we support - the higher up the list, the higher the priority
+    possibleControllers=[
+        # ------------------------------------------------------------------------
+        { "name" : "Logitech G29 Driving Force Racing Wheel",
+          "hasff" : True,
+          "leds" : ['RPM1','RPM2','RPM3','RPM4','RPM5'],
+          "reports": (
+              { "name":"accel" , "code":2,"type":3,"vartype":0, "range":256},
+              { "name":"brake" , "code":5,"type":3,"vartype":0, "range":256},              
+              { "name":"wheel" , "code":0,"type":3,"vartype":2, "range":65535},
+              { "name":"ind"   , "code":16,"type":3,"vartype":0,"range":1},
+              { "name":"beam"  , "code":17,"type":3,"vartype":0,"range":1},
+              { "name":"modeup", "code":707,"type":1,"vartype":3, "value":1},
+              { "name":"modedn", "code":708,"type":1,"vartype":3, "value":1},              
+              )
+          },
+        # ----------------------------------------------------------------------
+        { "name" : "Steering Wheel Controller",
+          "hasff" : False,
+          "reports": (
+              { "name":"accel" , "code":1,"type":3,"vartype":0, "range":128},
+              { "name":"wheel" , "code":0,"type":3,"vartype":0, "range":256},
+              { "name":"ind"   , "code":16,"type":3,"vartype":0,"range":1},
+              { "name":"beam"  , "code":17,"type":3,"vartype":0,"range":1}             
+              )
+          },
+        # ----------------------------------------------------------------------
+        { "name" : "PLAYSTATION(R)3 Controller",
+          "hasff" : False,
+          "reports": (
+              {"name":"accel" , "code":1,   "type":3,"vartype":0, "range":128},
+              {"name":"wheel" , "code":2,   "type":3,"vartype":0, "range":256},
+              {"name":"ind"   , "code":295, "type":1,"vartype":1, "value":1, "op":-1},
+              {"name":"ind"   , "code":295, "type":1,"vartype":1, "value":0, "op":0},          
+              {"name":"ind"   , "code":293, "type":1,"vartype":1, "value":1, "op":1},
+              {"name":"ind"   , "code":293, "type":1,"vartype":1, "value":0, "op":0},          
+              {"name":"beam"  , "code":292, "type":1,"vartype":1, "value":1, "op":-1},
+              {"name":"beam"  , "code":292, "type":1,"vartype":1, "value":0, "op":0},          
+              {"name":"beam"  , "code":294, "type":1,"vartype":1, "value":1, "op":1},
+              {"name":"beam"  , "code":294, "type":1,"vartype":1, "value":0, "op":0} 
+              )
+          },
+        # ------------------------------------------------------------------------
+        { "name" : "Goodbetterbest Ltd Gioteck VX2 Wired Controller",
+          "hasff" : False,
+          "reports": (
+              {"name":"accel" , "code":1,"type":3,"vartype":0,"range":128},
+              {"name":"wheel" , "code":2,"type":3,"vartype":0,"range":256},
+              {"name":"ind"   , "code":16,"type":3,"vartype":0,"range":1},
+              {"name":"beam"  , "code":17,"type":3,"vartype":0,"range":1}    
+              )
+          },
+        # ------------------------------------------------------------------------
+        { "name" : "Microsoft X-Box 360 pad",
+          "hasff" : False,
+          "reports": (
+              {"name":"accel" , "code" : 1  , "type" : 3, "vartype" : 0, "range" : 32767},
+              {"name":"wheel" , "code" : 3  , "type" : 3, "vartype" : 0, "range" : 65535},
+              {"name":"ind"   , "code" : 16 , "type" : 3, "vartype" : 0, "range" : 1},
+              {"name":"beam"  , "code" : 17 , "type" : 3, "vartype" : 0, "range" : 1} 
+          )
+        }
+    ]
+
+    # ---------------------------------------------
+    
+    def __init__(self):
+        # Construct default state of controller
+        self.input={}
+        self.forceId=None
+        self.controller=None
+
+        # Select highest priority match from available controller set
+        psn=None
+        for fn in evdev.list_devices():
+            for dev in Controller.possibleControllers:
+                if (dev["name"] in InputDevice(fn).name):
+                    if ((psn==None) or psn>Controller.possibleControllers.index(dev)):
+                        psn=Controller.possibleControllers.index(dev)
+                        devPort=fn
+                        self.c=dev
+                        self.controller=InputDevice(fn)
+                        self.c["realname"]=self.controller.name
+
+        if not self.controller:
+            raise RuntimeError("Device not found")
+
+        if ("leds" in self.c):
+            try:
+                self.c["ledlist"]=[]
+                # Find path to LEDs to allow them to be accessed
+                for l in self.c["leds"]:
+                    self.c["ledlist"].append(glob.glob("/sys/class/leds/*"+l+"/brightness")[0])
+            except IndexError:
+                pass
+
+        if (verbose):
+            print("Found",self.c["realname"])
+
+        self._managementEvent("setup")
+        self._writeEv(Controller.EV_FF,Controller.FF_GAIN,int((0xFFFF*Controller.GAINSET)/100))  
+
+    # ---------------------------------------------
+
+    def setLed(self,lno, isOn):
+        if (not "ledlist" in self.c):
+            return
+        try:
+            f = open(self.c["ledlist"][lno],"w");
+        except IndexError:
+            return
+        if (isOn):
+            f.write("1")
+        else:
+            f.write("0")
+        f.close()
+
+    # ---------------------------------------------        
+
+    def doRead(self):
+        for event in self.controller.read():
+            for o in self.c["reports"]:
+                if (event.code==o["code"]) and (event.type==o["type"]):
+                    if (o["vartype"]==0):
+                        # A regular ratio variable
+                        self.input[o["name"]]=event.value/o["range"]
+
+                    if (o["vartype"]==1):
+                        # A direct evaluation variable
+                        if (event.value==o["value"]):
+                            self.input[o["name"]]=o["op"];
+
+                    if (o["vartype"]==2):
+                        # Scaled and zeroed variable (for steering)
+                        p=(event.value/o["range"])-0.5 # Normalise and center around zero                        
+                        if (abs(p)<(self.characteristics[self.currentC]["deadzone"]/2)): # In the deadzone, to make it central
+                            p=0.5
+                        else:
+                            # In the active zone, with gain
+                            p=0.5+math.copysign((abs(p)-self.characteristics[self.currentC]["deadzone"]/2)*self.characteristics[self.currentC]["gain"],p)  
+                        self.input[o["name"]] = 0 if p<0 else 1 if p>1 else p  # Make sure gain doesn't take value out of range
+
+                    if (o["vartype"]==3):
+                        # Management variable
+                        if ((event.code==o["code"]) and (event.type==o["type"]) and (event.value==o["value"])):
+                            self._managementEvent(o["name"])
+
+            # If you want to add a controller input, just uncomment the line below to see what event it generates
+            #print(event)
+            
+    # ---------------------------------------------
+    
+    def _managementEvent(self,eventName):
+        if ((eventName=="modeup") and (self.currentC<len(self.characteristics)-1)):
+            self.currentC+=1
+        if ((eventName=="modedn") and (self.currentC)):
+            self.currentC-=1
+
+        # Unrecognized events will fall through to here, which is convinient
+        self._writeEv(Controller.EV_FF,Controller.FF_AUTOCENTER,self.characteristics[self.currentC]["autocenter"])
+        if (verbose):
+            print("Mode:",self.characteristics[self.currentC]["name"])
+
+        if ("ledlist" in self.c):
+            for ledNum in range(1,len(self.c["ledlist"])):
+                self.setLed(ledNum,True if (ledNum<=(1+self.currentC)) else False)
+
+    # ---------------------------------------------
+    
+    def _writeEv(self, type, code, value):
+        e=Controller.Ev()
+        e.times=0
+        e.timeus=0        
+        e.type=type
+        e.code=code
+        e.value=value
+        os.write(self.controller.fileno(),memoryview(e))
+
+    # ---------------------------------------------        
+    
+    def constantForce(self, direction, strength):
+        if not self.c["hasff"]:
+            return
+        e=evdev.ff.Effect()
+        e.type=Controller.FF_CONSTANT
+        if not self.forceId:
+            e.id=-1
+        else:
+            e.id=self.forceId
+            e.ff_trigger.button=0
+        e.ff_trigger.interval=0
+        e.ff_replay.length=0xFFFF
+        e.ff_replay.delay=0
+        e.direction=direction
+        e.u.ff_constant_effect.level=strength
+        e.u.ff_constant_effect.ff_envelope.attack_length=0
+        e.u.ff_constant_effect.ff_envelope.attack_levek=0
+        e.u.ff_constant_effect.ff_envelope.fade_length=0
+        e.u.ff_constant_effect.ff_envelope.fade_level=0
+        self.forceId=fcntl.ioctl(self.controller.fileno(),Controller.EVIOCSFF,memoryview(e))
+        self._writeEv(Controller.EV_FF, self.forceId, True)
+
+    # ---------------------------------------------        
+    
+    def clearInput(self):
+        self.input={}
+
+    # ---------------------------------------------        
+    
+    def fileno(self):
+        # This is needed by select to allow the object to particiate in the
+        # select call
+        return (self.controller.fileno())
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+class NWClient:
+    def __init__(self, remAddr="127.0.0.1",remPort=6282):
+        self.remAddr = remAddr
+        self.remPort = remPort
+        self.comm = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    def send(self,msg):
+        self.comm.sendto(msg,(self.remAddr,self.remPort))
+
+    def fileno(self):
+        return self.comm.fileno()
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+class Actuator:
+    # The output variables we support 
+    NOLIGHTS=0
+    HEADLIGHTS=1
+    BRAKES=2
+    INDL=4
+    INDR=8
+    HIGHBEAM=16
+    MAXLIGHTS=(HEADLIGHTS|BRAKES|INDL|INDR|HIGHBEAM)
+    
+    opvars={
+        "motor"   : { "min":-100, "max":100, "def": 0 },
+        "steer"   : { "min":1000,   "max":0, "def":500 },
+        "lights"  : { "min":0, "max":MAXLIGHTS, "def":HEADLIGHTS },
+        "sn"      : { "min":0,   "max":0,    "def":0 }
+        }
+    
+    def __init__(self,servaddr,servport):
+        self.state=dict((k,self.opvars[k]["def"]) for k in self.opvars)
+        self.network=NWClient(servaddr,servport)
+
+    def fileno(self):
+        return self.network.fileno()
+        
+    def sendUpdate(self):
+        self.state["sn"]+=1
+        #print(self.state)
+        self.network.send(json.dumps(self.state).encode())
+
+    def motor(self,v):
+        self.state["motor"]=self.opvars["motor"]["min"]+int((self.opvars["motor"]["max"]-self.opvars["motor"]["min"])*v)
+
+    def steer(self,s):
+        self.state["steer"]=self.opvars["steer"]["min"]+int((self.opvars["steer"]["max"]-self.opvars["steer"]["min"])*s)
+        
+    def indLeft(self,isOn):
+        if (isOn):
+            self.state["lights"]|=Actuator.INDL
+        else:
+            self.state["lights"]&=~Actuator.INDL
+
+    def indRight(self,isOn):
+        if (isOn):
+            self.state["lights"]|=Actuator.INDR
+        else:
+            self.state["lights"]&=~Actuator.INDR
+
+    def headlights(self,isOn):
+        if (isOn):
+            self.state["lights"]|=Actuator.HEADLIGHTS
+        else:
+            self.state["lights"]&=~Actuator.HEADLIGHTS
+
+    def highbeam(self,isOn):
+        if (isOn):
+            self.state["lights"]|=Actuator.HIGHBEAM
+        else:
+            self.state["lights"]&=~Actuator.HIGHBEAM
+
+    def brake(self,isOn):
+        if (isOn):
+            self.state["lights"]|=Actuator.BRAKES
+        else:
+            self.state["lights"]&=~Actuator.BRAKES
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+class Processor:
+    # The mechanical processes of the vehicle
+    state={
+        "acc":0,
+        "brk":1,
+        "steerAngle":0,
+        "indl":False,
+        "indr":False,
+        "headlights":False,
+        "highbeam":False,        
+        "brake":False
+        }
+
+    def __init__(self):
+        self.pendingState=self.state.copy()
+
+    def _doUpdate(self,v):
+
+        # Firstly, check if there are updates to be performend
+        if (len(self.pendingState)==0):
+            return
+
+        # ...now commit them to the actuators
+        if ((self.pendingState["acc"]!=self.state["acc"]) or (self.pendingState["brk"]!=self.state["brk"])):
+            v.motor((1-self.pendingState["acc"]+self.pendingState["brk"])/2)
+            if (((1-self.pendingState["acc"]+self.pendingState["brk"])/2)<0.45):
+                v.brake(True)
+            else:
+                v.brake(False)
+            
+        if (self.pendingState["steerAngle"]!=self.state["steerAngle"]):
+            v.steer(self.pendingState["steerAngle"])
+        if (self.pendingState["indl"]!=self.state["indl"]):
+            v.indLeft(self.pendingState["indl"])
+        if (self.pendingState["indr"]!=self.state["indr"]):
+            v.indRight(self.pendingState["indr"])
+        if (self.pendingState["headlights"]!=self.state["headlights"]):
+            v.headlights(self.pendingState["headlights"])
+        if (self.pendingState["highbeam"]!=self.state["highbeam"]):
+            v.highbeam(self.pendingState["highbeam"])
+        if (self.pendingState["brake"]!=self.state["brake"]):
+            v.brake(self.pendingState["brake"])
+        v.sendUpdate()
+        self.state=self.pendingState.copy()
+
+        
+    def tick(self,c,v):
+        for d in c.input:
+            # ------------------------------------------------------------
+            if (d=="ind"):
+                if ((c.input[d])==-1):
+                    if (self.state["indr"]):
+                        self.pendingState["indr"]=False;
+                    else:
+                        self.pendingState["indl"]=True;
+                if ((c.input[d])==1):
+                    if (self.state["indl"]):
+                        self.pendingState["indl"]=False;
+                    else:
+                        self.pendingState["indr"]=True;
+            # ------------------------------------------------------------
+            if (d=="beam"):
+                if ((c.input[d])==1):
+                    self.pendingState["highbeam"]=False;
+                if ((c.input[d])==-1):
+                    self.pendingState["highbeam"]=True;
+            # ------------------------------------------------------------            
+            if (d=="accel"):
+                self.pendingState["acc"]=c.input[d]
+            # ------------------------------------------------------------
+            if (d=="brake"):
+                self.pendingState["brk"]=c.input[d]
+            # ------------------------------------------------------------
+            if (d=="wheel"):
+                self.pendingState["steerAngle"]=c.input[d]
+            # ------------------------------------------------------------                
+        c.clearInput()
+        self._doUpdate(v)
+        
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+
+verbose=False
+
+def main(argv):
+    servaddr="127.0.0.1"
+    servport=6282
+    global verbose
+   
+    try:
+        opts, args = getopt.getopt(argv,"hvs:p:",["verbose","servaddr=","servport="])
+    except getopt.GetoptError:
+        print(argv[0],'-v -s <servaddr> -p <servport>')
+        sys.exit(2)
+    for opt, arg in opts:
+        if opt == '-h':
+            print(argv[0],'-v -s <servaddr> -p <servport>')
+            sys.exit()
+        elif opt in ("-s", "--servaddr"):
+            servaddr = arg
+        elif opt in ("-v", "--verbose"):
+            verbose=True
+        elif opt in ("-p", "--servport"):
+            servport = arg
+
+    try:
+        controller=Controller()
+    except RuntimeError as e:
+        print("Couldn't find a controller to connect")
+        return -1
+        
+#    controller.constantForce(Controller.FF_DIR_WEST,10000)
+
+    actuator=Actuator(servaddr,servport)
+
+    processor=Processor()
+
+    ticktime=time.time()
+    
+    while (1):
+        avail_read,avail_write,avail_error=select.select([controller,actuator],[],[],0.001)
+        for o in avail_read:
+            o.doRead()
+
+        if (time.time()-ticktime>=0.005):
+            ticktime=time.time()
+            processor.tick(controller,actuator)
+
+# ==================================================
+if __name__ == "__main__":
+   main(sys.argv[1:])

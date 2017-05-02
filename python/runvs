@@ -1,0 +1,8 @@
+#!/bin/bash
+while [ true ]
+do
+    /home/icarus/vehicleserver
+    /home/icarus/vehicleserver -c /dev/serial0
+    /home/icarus/vehicleserver -c /dev/ttyACM2    
+    sleep 2
+done
