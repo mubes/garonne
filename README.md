@@ -1,4 +1,4 @@
-"
+```
                                        ++++++++++++++++++
                                   +++++++++++++++++++++++++++++
                               +++++++                      +++++++++
@@ -11,6 +11,7 @@
   +++   ++++ ###     ## ###      ###    ### ###    ### ###    ### ++++++++   +++
    ++++ ++++ ########## ###      ########## ###    ### ###    ### ++++    +++++
     +++++++   ###### ## ###       ########  ###     ## ##     ###  ++++++++++
+```
 
 
 #Introduction
@@ -34,13 +35,13 @@ ITS World Congress in Bordeaux in 2016 (Hence, the codename 'Garonne', the river
 Bordeaux lies on) based on bespoke hardware. It has been ported to COTS hardware by
 Technolution and is now released for open use.
 
-#Getting Started
+Getting Started
+===============
 Generally speaking, a Garonne system will consist of at least one vehicle, a control platform (consisting of a Low Level Board (LLB) and a High Level Board (HLB) and a command platform, which is generally remote. All of this runs on a physical vehicle...so, let's get started;
 
-##Physical Vehicle
-Generally speaking, you can use most remote controlled cars for the physical vehicle, the requirements are not very onerous. Once you've got it all built up, the vehicle will look something like this;
-
-![Vehicle](https://www.dropbox.com/s/fn6lnabuu2fop0k/IMG_20170503_131325.jpg?dl=0)
+Physical Vehicle
+----------------
+Generally speaking, you can use most remote controlled cars for the physical vehicle, the requirements are not very onerous. 
 
 The shopping list looks like the following;
 
