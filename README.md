@@ -40,7 +40,7 @@ Getting Started
 ===============
 Generally speaking, a Garonne system will consist of at least one vehicle, a control platform (consisting of a Low Level Board (LLB) and a High Level Board (HLB) and a command platform, which is generally remote. All of this runs on a physical vehicle which ends up looking something like this;
 
-![Screenshot](https://raw.githubusercontent.com/mubes/garonne/master/Pics/Vehicle.png)
+![Screenshot](https://raw.githubusercontent.com/mubes/garonne/master/Pics/Vehicle.jpg)
 
 (Note: This photo is a proto-proto-type, so the wiring colours don't nessesarily match up. I'll update it later).
 
