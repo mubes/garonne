@@ -38,7 +38,14 @@ Technolution and is now released for open use.
 
 Getting Started
 ===============
-Generally speaking, a Garonne system will consist of at least one vehicle, a control platform (consisting of a Low Level Board (LLB) and a High Level Board (HLB) and a command platform, which is generally remote. All of this runs on a physical vehicle...so, let's get started;
+Generally speaking, a Garonne system will consist of at least one vehicle, a control platform (consisting of a Low Level Board (LLB) and a High Level Board (HLB) and a command platform, which is generally remote. All of this runs on a physical vehicle which ends up looking something like this;
+
+![Screenshot](https://raw.githubusercontent.com/mubes/garonne/master/Pics/Vehicle.png)
+
+(Note: This photo is a proto-proto-type, so the wiring colours don't nessesarily match up. I'll update it later).
+
+
+...so, let's get started;
 
 Physical Vehicle
 ----------------
@@ -69,8 +76,15 @@ The shopping list looks like the following;
 * ***5V power supply***. There are 1001 of these. We use the little MP1584 modules set to 5V with a dab of nail varnish on the pot afterwards. Use whatever you prefer but *beware* there are many stories of fake modules coming out of China. They usually work fine but I wouldn't trust them anywhere near their stated current limits!
 
 In addition to this lot you will need some male to female and female to female 10cm and 20cm Dupont 
-jumpers, and some nylon m3 standoff pillars. In the Wiring directory you will find a set of wiring digrams (one for
-Power and one for Signalling) with colours and everything.
+jumpers, and some nylon m3 standoff pillars. In the Wiring directory you will find a set of wiring digrams for Power;
+
+
+![Screenshot](https://raw.githubusercontent.com/mubes/garonne/master/Wiring/Power.png)
+
+... and for signalling;
+
+![Screenshot](https://raw.githubusercontent.com/mubes/garonne/master/Wiring/Signalling.png)
+
 
 Low Level Board
 ---------------
