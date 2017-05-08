@@ -39,3 +39,9 @@ Tools/lpcrc/lpcrc
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Editor Crud
+#############
+.cproject
+.project
+.vscode/*

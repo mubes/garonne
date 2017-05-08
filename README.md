@@ -51,7 +51,7 @@ Physical Vehicle
 ----------------
 Generally speaking, you can use most remote controlled cars for the physical vehicle, the requirements are not very onerous. 
 
-The shopping list looks like the following;
+The shopping list looks like the following (Full list of compnents and quantities is at the foot of this note);
 
 * ***M.Rage chassis, assembled***.  [Hobbyking](https://hobbyking.com/en_us/bsr-racing-m-rage-1-10-4wd-m-chassis-un-assembled-kit.html). The assembled bit is an exercise for the reader.
 
@@ -198,4 +198,43 @@ wheelclient -s icarus32n4.local
 ```
 
 
-                
+Parts List
+----------
+
+| Component                                 | Per Vehicle |
+| ------------------------------------------|:-----------:|
+| Frame		                                 | 1 |
+| Plastic Motor Mount	                         | 1 |
+| Polulu 2270 motor	                         | 1 |
+| Servo Motor                                    | 1 |
+| 31 tooth 48P pinion with 5mm bore	         | 1 |
+| Acrylic Baseplate                              | 1 |
+| 10mm M2.5 Nylon Spacer                	 | 4 | 
+| 10mm M3 Nylon Spacer	                         | 9 |
+| m3 nut	                                 | 9 |
+| 30mm Nylon Hex Standoff	                 | 4 |
+| 6mm M3 Hex Head bolt	                         | 13|
+| M3 Washer                                      | 4 |
+| 8mm M2.5 Cross Head Screw	                 | 4 |
+| 10x1 Dupont Housing                            | 1 |
+| 10x2 Dupont Housing                            | 3 |
+| 7x1 Dupont Housing                             | 1 |
+| 6x2 Dupont Housing                             | 1 |
+| 6x1 Dupont Housing                             | 1 |
+| 20x2 Dupont Housing                            | 1 |
+| 10cm 40 way Male to Female Dupont Jumper       | 1 |
+| 20cm 40 way Male to Female Dupont Jumper	 | 1 |
+| 15cm 40 way Male to Female Dupont Jumper	 | 1 |
+| Hookup wire for Battery (Black & Red)		 | 1 |
+| Hookup wire for 5V Distribution (Black & Blue) | 1 |
+| 56K 1/4 Watt Resistor	                         | 1 |
+| 10K 1/4 Watt Resistor	                         | 1 |
+| MPU9250 9D Sensor Board	                 | 1 |
+| Raspberry Pi 3 or PiW	                         | 1 |
+| 8GB uSD Card                                   | 1 |
+| Ultrasonic Transducer	                         | 2 |
+| LPC4367 LPCXpresso board	                 | 1 | 
+| VHN2SP30 Motor Driver Board	                 | 1 |
+| MP1584 PSU (Adjust to 5V)	                 | 1 |
+| KCD1-104 Power Switch                          | 1 |
+| DWM1000 Module                                 | 1 |  
