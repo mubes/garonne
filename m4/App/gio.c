@@ -80,6 +80,7 @@ static struct gioStruct
     uint32_t connected;         /* Has a host connected to us since reset? */
     uint32_t chaseLed;          /* Which LED we're currently working with */
 
+    int16_t temp;               /* Current system temperature */
     uint16_t batLevel;          /* Data from the battery */
 
     TimerHandle_t debounce;     /* Debounce timer for userbutton */
@@ -222,6 +223,18 @@ void GIORGBLedSetColour(enum RGB_LED_ENUM l, uint32_t c)
                            GETGPIOPIN(_rgb_led[l].g), !(c & 1 << 1));  // low active
     Chip_GPIO_WritePortBit(LPC_GPIO_PORT, GETGPIOPORT(_rgb_led[l].b),
                            GETGPIOPIN(_rgb_led[l].b), !(c & 1 << 2));  // low active
+}
+// ============================================================================================
+uint32_t GIOFlags(void)
+
+{
+    return ( (ConfigNomadic()?GIO_FLAG_NOMADIC:0) );
+}
+// ============================================================================================
+uint32_t GIOTemp(void)
+
+{
+    return _g.temp;
 }
 // ============================================================================================
 void GIOSetConnected(BOOL newConnectedVal)

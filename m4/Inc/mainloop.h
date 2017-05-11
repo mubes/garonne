@@ -50,5 +50,6 @@ void MLInit(void);
 void MLUpdateAvailable(uint32_t primitive);
 void MLi2cUpdateAvailable(uint32_t event);
 BOOL MLUpdateAvailableFromISR(uint32_t sensor);
+void MLeventReqSetDone(void);
 // ============================================================================================
 #endif

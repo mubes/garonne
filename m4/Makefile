@@ -60,7 +60,7 @@ endif
 
 GCC_DEFINE+= -std=gnu99 -DCORE_M4
 DOXCONFIG   = config/doxygen.cfg
-EXPORT = llb_v2.tgz
+EXPORT = Garonne.tgz
 
 # The target, flash and ram of the microprocessor.
 ifdef TARGET_LPC4370
@@ -123,6 +123,7 @@ CFILES += $(shell find $(VL_DIR)/src -name "*.c" -print)
 DECA_DIR=thirdparty/decadriver
 INCLUDE_PATHS += -I$(DECA_DIR) 
 CFILES += $(shell find $(DECA_DIR) -name "*.c" -print)
+
 ##########################################################################
 # Project-specific files 
 ##########################################################################
@@ -168,7 +169,7 @@ OBJDUMP = $(CROSS_COMPILE)objdump
 LPCRC = Tools/lpcrc/lpcrc
 GET_GIT_HASH = Tools/git_hash_to_c/git_hash_to_c.sh
 MAKE = make
-OUTFILE = llb_v2
+OUTFILE = Garonne
 
 ##########################################################################
 # Startup files
@@ -191,7 +192,7 @@ endif
 ifdef DEBUG
 HOST=--specs=rdimon.specs -lgcc -lc -lrdimon -lm
 else
-HOST=-lc -lc -lnosys
+HOST=-lc -lc -lnosys -lm
 endif
 
 ##########################################################################
@@ -214,7 +215,7 @@ CFLAGS =  $(ARCH_FLAGS) $(STARTUP_DEFS) $(OPT_LEVEL) $(DEBUG_OPTS) -DTARGET=$(TA
 		-ffunction-sections -fdata-sections -Wdouble-promotion -Wall $(INCLUDE_PATHS)  $(GCC_DEFINE)
 ASFLAGS = -c $(DEBUG_OPTS) $(INCLUDE_PATHS) $(ARCH_FLAGS) $(GCC_DEFINE) \
           -x assembler-with-cpp
-LDFLAGS = $(CFLAGS) $(USE_NANO) $(ARCH_FLAGS) -Wl,--no-wchar-size-warning,--gc-sections $(MAP) $(HOST)
+LDFLAGS = $(CFLAGS) $(USE_NANO) $(ARCH_FLAGS) -Wl,--no-wchar-size-warning,--gc-sections $(MAP) 
 
 OCFLAGS = --strip-unneeded
 
@@ -243,7 +244,7 @@ $(OLOC)/%.o : %.S
 	Assembling $<)
 
 build: get_version $(POBJS) $(SYS_OBJS)
-	$(Q)$(LD) $(LDFLAGS) -T $(LD_SCRIPT) -o $(OLOC)/$(OUTFILE).elf $(MAP) $(POBJS) $(LDLIBS)
+	$(Q)$(LD) $(LDFLAGS) -T $(LD_SCRIPT) -o $(OLOC)/$(OUTFILE).elf $(MAP) $(POBJS) $(LDLIBS) $(HOST)
 	$(Q)$(SIZE) $(OLOC)/$(OUTFILE).elf
 	$(Q)$(OBJCOPY) $(OCFLAGS) -O binary $(OLOC)/$(OUTFILE).elf $(OLOC)/$(OUTFILE).bin
 	$(Q)$(LPCRC) $(OLOC)/$(OUTFILE).bin > /dev/null

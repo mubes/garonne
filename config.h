@@ -38,18 +38,20 @@
 #define _CONFIG_
 
 #ifdef CORE_M4
-/* Scheduler includes....only used on the M4 */
+#define IAM_M4
+#define INCLUDE_M0_APP
+#define M0_APPBASE (0x1B000000)
+#endif
+
+#ifdef CORE_M0
+#define IAM_M0APP
+#endif
+
 #include "FreeRTOS.h"
 #include "task.h"
 #include "semphr.h"
 #include "timers.h"
 #include "cmsis.h"
-#endif
-
-#ifdef CORE_M0
-/* We only need the chip package */
-#include "chip.h"
-#endif
 
 /* Define one of these for the board revision you're building for */
 #define VL_DISTANCE         // <<< Using VL distance sensor rather than Ultrasonics
@@ -256,9 +258,12 @@ typedef struct
     uint32_t x;
     uint32_t y;
     uint32_t z;
+    uint32_t distcheckInterval;
+    BOOL isNomadic;
 } ConfigType;
 
-#define DEFAULT_CONFIG { .versionNumber=VERSION_SEQ, .supplyV=3300, .id=NOENTITY, .x=NOLOCATION, .y=NOLOCATION, .z=NOLOCATION }
+// FIXME - need a real ID
+#define DEFAULT_CONFIG { .versionNumber=VERSION_SEQ, .distcheckInterval = 100, .supplyV=3300, .id=32, .x=NOLOCATION, .y=NOLOCATION, .z=NOLOCATION, .isNomadic=TRUE }
 
 extern ConfigType ConfigStore;
 extern BOOL wasDefaulted;
@@ -268,11 +273,28 @@ ALWAYS_INLINE BOOL ConfigWasDefaulted(void) { return wasDefaulted; }
 ALWAYS_INLINE BOOL ConfigIsSaved(void) { return isSaved; }
 ALWAYS_INLINE uint32_t ConfigVersionNumber(void) { return ConfigStore.versionNumber; }
 ALWAYS_INLINE uint32_t ConfigSupplyV(void) { return ConfigStore.supplyV; }
+ALWAYS_INLINE uint32_t ConfigDistcheckInterval(void) { return ConfigStore.distcheckInterval; }
 
 ALWAYS_INLINE uint32_t ConfigID(void) { return ConfigStore.id; }
 ALWAYS_INLINE uint32_t ConfigLocx(void) { return ConfigStore.x; }
 ALWAYS_INLINE uint32_t ConfigLocy(void) { return ConfigStore.y; }
 ALWAYS_INLINE uint32_t ConfigLocz(void) { return ConfigStore.z; }
+ALWAYS_INLINE BOOL ConfigNomadic(void) { return ConfigStore.isNomadic; }
+
+
+ALWAYS_INLINE BOOL ConfigSetdistcheckInterval(BOOL distcheckSet)
+{
+    isSaved = FALSE;
+    ConfigStore.distcheckInterval = distcheckSet;
+    return TRUE;
+}
+
+ALWAYS_INLINE BOOL ConfigSetNomadic(BOOL NomadicSet)
+{
+    isSaved = FALSE;
+    ConfigStore.isNomadic = NomadicSet;
+    return TRUE;
+}
 
 ALWAYS_INLINE BOOL ConfigSetSupplyV(uint32_t SupplyVSet)
 {

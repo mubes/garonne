@@ -121,11 +121,13 @@ int main( void )
     /* All good - wake up the M0app CPU */
     Chip_RGU_TriggerReset(RGU_M0APP_RST);
     Chip_Clock_Enable(CLK_M4_M0APP);
+
     /* Keep in mind the M0 image must be aligned on a 4K boundary */
-    Chip_CREG_SetM0AppMemMap(0x10008000);
+    Chip_CREG_SetM0AppMemMap(M0_APPBASE);
     Chip_RGU_ClearReset(RGU_M0APP_RST);
 #endif
 
+    DBG("System running" EOL);
     /* Start the scheduler */
     vTaskStartScheduler();
 

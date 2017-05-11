@@ -131,7 +131,12 @@ SECTIONS
     __exidx_end = .;
     
     _etext = .;
-        
+
+    /* Include image for the M0 */
+    .m0App : ALIGN(1)
+    {
+	INCLUDE ../bindist/llb_v2_m0app.ld
+    } > Flash_01
     
     /* DATA section for RamLoc40 */
     .data_RAM2 : ALIGN(4)

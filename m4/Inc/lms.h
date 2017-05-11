@@ -53,6 +53,7 @@
 #define EVENT_SERIAL3                   (SERPORT_UART3) /* == 3 */
 #define EVENT_USB0                      (SERPORT_USB)   /* == 4 */
 #define EVENT_USERBUTTON                (5)
+#define EVENT_REQSETDONE                (6)
 
 #define SENSOR_TYPE_US_RANGE            (10)
 #define SENSOR_TYPE_CAR_STATUS          (11)
@@ -65,6 +66,7 @@
 #define SENSOR_TYPE_REV_TICKS           (18)
 #define SENSOR_TYPE_DISTANCE            (19)
 #define SENSOR_TYPE_USERBUTTON          (20)
+
 
 /* Commands from HLB to LLB */
 #define CMD_LED_NONE                    0

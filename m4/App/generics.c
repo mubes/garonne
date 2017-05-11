@@ -29,39 +29,38 @@
  * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
  * OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
- * Generic I/O module
- * ==================
+ * Generic Routines
+ * ================
  *
- * This module is responsible for the setup and control of generic I/O stuff like the ID
- * bit getting and LED output.
- *
+ * A place to keep generic routines that don't fit anywhere else and/or are generally applicable.
  */
 
-#ifndef _GIO_H_
-#define _GIO_H_
-
 #include "config.h"
+#include "generics.h"
 
-enum RGB_LED_ENUM {RGB0_LED, NUM_RGB_LED };
-enum DBG_LED_ENUM {DBG0_LED, NUM_DEBUG_LEDS };
-
-#define NO_BATT   (0)                   /* Indicator that there is no battery present */
-
-#define GIO_FLAG_CHARGING               (1<<0)  /* Device is charging its battery at the moment */
-#define GIO_FLAG_EXTPWR                 (1<<1)  /* Device is running on external power */
-#define GIO_FLAG_NOMADIC                (1<<2)  /* Device is nomadic (i.e. should not be used for range calculations) */
 // ============================================================================================
-void GIOTaskRun(void);
-void GIORGBLedSetColour(enum RGB_LED_ENUM l, uint32_t c);
-uint16_t GIOBattery(void);
-void GIOSetConnected(BOOL newConnectedVal);
-void GIOdebugLedSet(enum DBG_LED_ENUM led);
-void GIOdebugLedClear(enum DBG_LED_ENUM led);
-void GIOdebugLedToggle(enum DBG_LED_ENUM led);
-void GIOSmoke(BOOL isSmoking);
-BOOL GIOUserButtonState(void);
-uint32_t GIOFlags(void);
-uint32_t GIOTemp(void);
-void GIOSetup(void);
+// Housekeeping Stuff
 // ============================================================================================
-#endif /* _GIO_H_ */
+
+static uint32_t _lfsr=1;
+
+// ============================================================================================
+// ============================================================================================
+// ============================================================================================
+// Puiblicly available routines
+// ============================================================================================
+// ============================================================================================
+// ============================================================================================
+void genericsSetseed(uint32_t seedSet)
+
+{
+    _lfsr=seedSet;
+}
+// ============================================================================================
+uint32_t genericsRand(void)
+{
+    uint32_t bit;
+    bit  = ((_lfsr >> 0) ^ (_lfsr >> 2) ^ (_lfsr >> 3) ^ (_lfsr >> 5) ) & 1;
+    return _lfsr =  (_lfsr >> 1) | (bit << 15);
+}
+// ============================================================================================

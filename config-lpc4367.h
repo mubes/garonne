@@ -77,7 +77,7 @@
 #define DIST_CAP_FRONT                  GIMAPINDEF(0x05, 3, (SCU_MODE_FUNC5 | SCU_MODE_INBUFF_EN | SCU_MODE_PULLDOWN), (1 << 4)) // patch required!    // T8 (timer 1 capture input 3, GIMA select T1_CAP3)
 #define DIST_CAP_TIMER_INPUT_FRONT      3
 #define DIST_TRIG_BACK                  GPIOPINDEF(0x05, 2, SCU_MODE_FUNC0, 2, 11) //ball R4
-#define DIST_CAP_BACK                   GIMAPINDEF(0x02, 13, (SCU_MODE_FUNC1 | SCU_MODE_INBUFF_EN | SCU_MODE_PULLDOWN), (0 << 4))      // C16 (Timer 1 capture input 2, GIMA select CTIN_4)
+#define DIST_CAP_BACK                   GIMAPINDEF(0x07, 13, (SCU_MODE_FUNC1 | SCU_MODE_INBUFF_EN | SCU_MODE_PULLDOWN), (0 << 4))      // C16 (Timer 1 capture input 2, GIMA select CTIN_4)
 
 #define DIST_CAP_TIMER_INPUT_BACK       (2)
 #define DIST_INTPRIORITY                (7)
@@ -130,7 +130,7 @@ enum VLDIST_CHANNEL_ENUM {VLDIST_FRONT, VLDIST_REAR, VLDISTNONE };
 // ----- MPU9250 9D sensor Setup (nined.c)
 // ---------------------------------------
 
-#define NINED_INT                       GPIOPINDEF(0x2, 6, (SCU_MODE_FUNC4 | SCU_MODE_INBUFF_EN | SCU_MODE_INACT), 5, 6)
+#define NINED_INT                       GPIOPINDEF(0x2,13, (SCU_MODE_FUNC0 | SCU_MODE_INBUFF_EN | SCU_MODE_INACT), 1,13)
 #define NINED_SENSOR_ID                 (0x68)
 #define MAG_SENSOR_ID                   (0x0C)
 #define NINED_SENSOR_SPEED              (400000)
@@ -158,15 +158,14 @@ enum VLDIST_CHANNEL_ENUM {VLDIST_FRONT, VLDIST_REAR, VLDISTNONE };
 #define DW_LOW_SPI_SPEED 				(3000000)
 #define DW_HIGH_SPI_SPEED 				(10000000)
 
-/* For J5 connection via SSP - remember to change definitions for serial0
- * ======================================================================
- */
+// Pin Allocations...
 #define DW_MISO                    		PINDEF(0x01, 3, (SCU_MODE_FUNC5 | SCU_MODE_INBUFF_EN))
 #define DW_MOSI                    		PINDEF(0x01, 4, (SCU_MODE_FUNC5))
-#define DW_SEL                     		GPIOPINDEF(0x01, 5, (SCU_MODE_FUNC0 | SCU_MODE_INBUFF_EN),1, 8)
+#define DW_SEL                     		GPIOPINDEF(0x06, 1, (SCU_MODE_FUNC0),3, 0)
 #define DW_CLK                     		PINDEF(0x0f, 4, (SCU_MODE_FUNC0))
-/* FIXME */ #define DW_RST                     		GPIOPINDEF(0x07, 4, (SCU_MODE_FUNC4|SCU_MODE_INACT | SCU_MODE_INBUFF_EN), 5, 7)
-#define DW_INT                     		GPIOPINDEF(0x06, 4, (SCU_MODE_FUNC0|SCU_MODE_INBUFF_EN|SCU_MODE_ZIF_DIS|SCU_MODE_PULLDOWN), 3, 3)
+#define DW_INT                     		GPIOPINDEF(0x03, 5, (SCU_MODE_FUNC0|SCU_MODE_INBUFF_EN|SCU_MODE_ZIF_DIS|SCU_MODE_PULLDOWN), 1, 15)
+#define DW_RST                       GPIOPINDEF(0x2, 6, (SCU_MODE_FUNC4 | SCU_MODE_INBUFF_EN | SCU_MODE_INACT), 5, 6)
+
 
 // --- DEBUG LEDS (gio.c)
 // ----------------------

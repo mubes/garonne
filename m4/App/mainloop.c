@@ -36,6 +36,7 @@
  *
  */
 
+
 #include "gio.h"
 #include "uartHandler.h"
 #include "ui.h"
@@ -56,6 +57,7 @@
 #include "enet.h"
 #include "audio.h"
 #include "can.h"
+#include "generics.h"
 
 /* Intervals at which data are asynchronously sent to HLB */
 #define BATTERY_STATUS_INTERVAL (MILLIS_TO_TICKS(1000))
@@ -154,9 +156,6 @@ static portTASK_FUNCTION( _mainThread, pvParameters )
 #ifdef INCLUDE_CAN
     CANSetup();
 #endif
-//    radioInit();
-
-    vTaskDelay(50);
 
     while (1)
         {
@@ -190,6 +189,7 @@ static portTASK_FUNCTION( _mainThread, pvParameters )
                 {
                     LmsSendUserbutton(GIOUserButtonState());
                 }
+
             /* =============================================== */
             /* Now deal with all of the interval based reports */
             /* =============================================== */
@@ -257,7 +257,7 @@ void MLInit(void)
 
     i2cInit();
 
-    xTaskCreate(_mainThread, "mainLP", 320, NULL,
+    xTaskCreate(_mainThread, "mainLP", 512, NULL,
                 (tskIDLE_PRIORITY + 1UL), &_m.task);
 
     /* A loop for the time-intensive i2c handler */

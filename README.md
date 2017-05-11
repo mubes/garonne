@@ -85,10 +85,9 @@ jumpers, and some nylon m3 standoff pillars. In the Wiring directory you will fi
 
 ![Screenshot](https://raw.githubusercontent.com/mubes/garonne/master/Wiring/Signalling.png)
 
-
 Low Level Board
 ---------------
-Bringing up the Low Level Board (LLB) requires the use of the GNU ARM gcc compiler suite. You can download that directly from [ARM] (https://developer.arm.com/open-source/gnu-toolchain/gnu-rm) and then use something like GNU ARM Eclipse to fold it into an IDE (http://gnuarmeclipse.github.io/) or, the easier option, is to head over to NXP and download either LPCXpresso or MPUXpresso from their site. MCUXpresso is the more recent suite, and is arguably more powerful, but it's a new product and at the time of writing we found LPCXpresso 8.2.2 to be more solid than MCUXpresso 10.0.0....but the letter is likely to be updated frequently, so YMMV.
+Bringing up the Low Level Board (LLB) requires the use of the GNU ARM gcc compiler suite. You can download that directly from [ARM] (https://developer.arm.com/open-source/gnu-toolchain/gnu-rm) and then use something like GNU ARM Eclipse to fold it into an IDE (http://gnuarmeclipse.github.io/) or, the easier option, is to head over to NXP and download either LPCXpresso or MPUXpresso from their site. MCUXpresso is the more recent suite, and is arguably more powerful, but it's a new product and at the time of writing we found LPCXpresso 8.2.2 to be more solid than MCUXpresso 10.0.0....but the letter is likely to be updated frequently, so YMMV.  Having said that, as we've brought up the M0 cores, we've not found either of these suites to be great, so we've installed the Segger JLink firmware (available for download from the [Segger Site](https://www.segger.com/jlink-lpcxpresso-ob.html) ) and used it with the [GNU Arm Eclipse](http://gnuarmeclipse.github.io/) setup. This makes for quite an impressively capable setup.
 
 The code for the LLB is well commented and will build directly from the Makefile with a `make` command...or import it as a makefile project into one of the aforementioned environments.  It will flash directly onto the LLB using the built in debugger.
 
@@ -162,6 +161,7 @@ The code for the various CPUs lives in subdirectories. For now we only concern o
                                                                
 * `llb_init.c` & `startup_lpc43xx.c`: Deal with the booting of the system.
 
+There is code that runs on the M0 board for interfacing to the Ultrawideband radio and a Quaterion structure for the 9D sensor. I'm afraid we can't make the source code for these files openly availble but you're free to use the code with the Garonne platform (See the licence in the `bindist` directory, where the binary blob also lives).
 
 High Level Board
 ----------------

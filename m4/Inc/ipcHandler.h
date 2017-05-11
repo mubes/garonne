@@ -29,39 +29,59 @@
  * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
  * OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
- * Generic I/O module
- * ==================
- *
- * This module is responsible for the setup and control of generic I/O stuff like the ID
- * bit getting and LED output.
- *
+ * ipcHandler.c
+ * ============
+ * Generic Communication from the M4 CPU to one of the subsidiary M0s.
+ * Receivers are defined in terms of FreeRTOS buffers so we can just monitor a receive buffer to check when there's
+ * data available.
+
  */
 
-#ifndef _GIO_H_
-#define _GIO_H_
+#ifndef IPCHANDLER_H_
+#define IPCHANDLER_H_
 
 #include "config.h"
+#include "FreeRTOS.h"
+#include "queue.h"
 
-enum RGB_LED_ENUM {RGB0_LED, NUM_RGB_LED };
-enum DBG_LED_ENUM {DBG0_LED, NUM_DEBUG_LEDS };
+struct buff
 
-#define NO_BATT   (0)                   /* Indicator that there is no battery present */
+{
+    uint32_t rp;
+    uint32_t wp;
+    uint32_t len;
+    uint16_t flags;
+    uint8_t *buffer;
+};
 
-#define GIO_FLAG_CHARGING               (1<<0)  /* Device is charging its battery at the moment */
-#define GIO_FLAG_EXTPWR                 (1<<1)  /* Device is running on external power */
-#define GIO_FLAG_NOMADIC                (1<<2)  /* Device is nomadic (i.e. should not be used for range calculations) */
+struct ipcBuffer
+{
+    SemaphoreHandle_t TxEmpty;  /* Sempahore that TX buffer is freely available */
+    struct buff m40;            /* M4 to M0 buffer */
+    struct buff m04;            /* M0 to M4 buffer */
+};
+
+/* To avoid life getting complicated, make sure this is a multiple of 4 */
+#define IPC_QUEUE_LEN  (128)
+
+/* Where we place the buffers... */
+#define ADDR_IPCAPP_BUFFER (0x20008000)
+#define ADDR_IPCSUB_BUFFER (ADDR_IPCAPP_BUFFER+2*(sizeof(struct buff)+IPC_QUEUE_LEN))
+
+enum ipc {IPC_APP, IPC_SUB, NUM_IPCS, IPC_M4}; /* The IPC_M4 is a dummy for the M0 -> M4 communication direction */
+
 // ============================================================================================
-void GIOTaskRun(void);
-void GIORGBLedSetColour(enum RGB_LED_ENUM l, uint32_t c);
-uint16_t GIOBattery(void);
-void GIOSetConnected(BOOL newConnectedVal);
-void GIOdebugLedSet(enum DBG_LED_ENUM led);
-void GIOdebugLedClear(enum DBG_LED_ENUM led);
-void GIOdebugLedToggle(enum DBG_LED_ENUM led);
-void GIOSmoke(BOOL isSmoking);
-BOOL GIOUserButtonState(void);
-uint32_t GIOFlags(void);
-uint32_t GIOTemp(void);
-void GIOSetup(void);
+void ipcInit(EVENT_CB(*cb_set));          ///< Create the communication subsystem
+void ipcFlush(enum ipc port);             ///< Flush the receive path
+
+
+BOOL ipcOpenPort(enum ipc port);          ///< Open port
+void ipcClosePort(enum ipc port);         ///< Close port and release resources
+uint8_t ipcGetRx(enum ipc port);          ///< Get received data element
+BOOL ipcDataPending(enum ipc port);       ///< Check to see if there is any data pending
+BOOL ipcConnected(enum ipc port);         ///<IPC Connected Status
+
+uint32_t ipcTx(enum ipc port, uint8_t *d, uint8_t len);  ///< Transmit through the port
+uint32_t ipcTxt(enum ipc port, uint32_t ticksToWait, uint8_t *d, uint32_t len); ///< Transmit and wait if needed
 // ============================================================================================
-#endif /* _GIO_H_ */
+#endif /* IPCHANDLER_H_ */
