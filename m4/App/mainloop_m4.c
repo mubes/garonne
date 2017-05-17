@@ -58,6 +58,8 @@
 #include "audio.h"
 #include "can.h"
 #include "generics.h"
+#include "ipcExchange.h"
+#include "ipcHandler.h"
 
 /* Intervals at which data are asynchronously sent to HLB */
 #define BATTERY_STATUS_INTERVAL (MILLIS_TO_TICKS(1000))
@@ -92,7 +94,7 @@ static portTASK_FUNCTION( _i2cThread, pvParameters )
 
     LEDInit();
     vTaskDelay(GYRO_WAKEUP_TIME);
-    ninedInit();
+    //ninedInit();
 
     while (1)
         {
@@ -104,7 +106,7 @@ static portTASK_FUNCTION( _i2cThread, pvParameters )
 
             if (nowTicks - lastninedEnc > NINED_INTERVAL)
                 {
-                ninedCheckOutput();
+                //ninedCheckOutput();
                     lastninedEnc = nowTicks;
                 }
 
@@ -141,6 +143,7 @@ static portTASK_FUNCTION( _mainThread, pvParameters )
 #endif
     RotencInit();
     UISetup();
+    IPCXSetup();
 
     /* Optional components */
 #ifdef INCLUDE_ETHERNET
@@ -180,6 +183,16 @@ static portTASK_FUNCTION( _mainThread, pvParameters )
                     CHECK(TRUE, UISeize(FALSE));
                 }
             // ---------------------
+            if (evSet & (1 << SERPORT_M0APP))
+                {
+                    IPCXProcessHandler(serportGetEvent(SERPORT_M0APP));
+                }
+            // ---------------------
+            if (evSet & (1 << SERPORT_M0SUB))
+                {
+                    IPCXProcessHandler(serportGetEvent(SERPORT_M0SUB));
+                }
+            // ---------------------
 #ifndef VL_DISTANCE
             if (evSet & (1 << SENSOR_TYPE_US_RANGE))
                 DISTCheckOutput();
@@ -195,7 +208,7 @@ static portTASK_FUNCTION( _mainThread, pvParameters )
             /* =============================================== */
             if (nowTicks - lastBatteryEnc > BATTERY_STATUS_INTERVAL)
                 {
-                    LmsSendBatteryStatus(ninedTemp(), 0, 0, GIOBattery());
+//                    LmsSendBatteryStatus(ninedTemp(), 0, 0, GIOBattery());
                     lastBatteryEnc = nowTicks;
                 }
             // ---------------------
@@ -226,7 +239,7 @@ void MLDistCheckOutput(void)
 
 {
     // FIXME
-    LmsSendBatteryStatus(ninedTemp(), 0, 0, GIOBattery()); // temperature actually read from 9D sensor...
+//    LmsSendBatteryStatus(ninedTemp(), 0, 0, GIOBattery()); // temperature actually read from 9D sensor...
 }
 // ============================================================================================
 void MLUpdateAvailable(uint32_t sensor)

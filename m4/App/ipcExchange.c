@@ -1,4 +1,4 @@
-/*
+ /*
  *                                       ++++++++++++++++++
  *                                  +++++++++++++++++++++++++++++
  *                              +++++++                      +++++++++
@@ -29,36 +29,44 @@
  * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
  * OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
- * Generic I/O module
- * ==================
+ * IPCX module
+ * ===========
  *
- * This module is responsible for the setup and control of generic I/O stuff like the ID
- * bit getting and LED output.
+ * This module takes input from the ipc link and dispatches it appropriately.
  *
  */
 
-#ifndef _GIO_H_
-#define _GIO_H_
-
-#include "config.h"
-
-enum RGB_LED_ENUM {RGB0_LED, NUM_RGB_LED };
-enum DBG_LED_ENUM {DBG0_LED, NUM_DEBUG_LEDS };
-
-#define NO_BATT   (0)                   /* Indicator that there is no battery present */
+#include <ctype.h>
+#include <string.h>
+#include <strings.h>
+#include <stdlib.h>
+#include "serport.h"
+#include "mainloop.h"
 
 // ============================================================================================
-void GIOTaskRun(void);
-void GIORGBLedSetColour(enum RGB_LED_ENUM l, uint32_t c);
-uint16_t GIOBattery(void);
-void GIOSetConnected(BOOL newConnectedVal);
-void GIOdebugLedSet(enum DBG_LED_ENUM led);
-void GIOdebugLedClear(enum DBG_LED_ENUM led);
-void GIOdebugLedToggle(enum DBG_LED_ENUM led);
-void GIOSmoke(BOOL isSmoking);
-BOOL GIOUserButtonState(void);
-uint32_t GIOFlags(void);
-uint32_t GIOTemp(void);
-void GIOSetup(void);
 // ============================================================================================
-#endif /* _GIO_H_ */
+// ============================================================================================
+// Publicly available routines
+// ============================================================================================
+// ============================================================================================
+// ============================================================================================
+void IPCXProcessHandler(uint32_t e)
+
+{
+    if (e & SERPORT_EV_DATARX)
+        {
+            /* Copy material from the IPC port to the serial port */
+            while (serportDataPending(SERPORT_M0APP))
+                {
+                    uint8_t t=serportGetRx(SERPORT_M0APP);
+                    serportTx(TERMINAL_PORT,&t,1);
+                }
+        }
+}
+// ============================================================================================
+void IPCXSetup(void)
+{
+    serportOpenPort(SERPORT_M0APP, TERMINAL_BAUDRATE,
+                    UART_LCR_WLEN8 | UART_LCR_SBS_1BIT | UART_LCR_PARITY_DIS);
+}
+// ============================================================================================

@@ -121,15 +121,8 @@ extern const uint8_t idSeq[];           /* Unique identifier for management oper
 #define NOENTITY            0
 #define NODISTANCE          0
 #define NOLOCATION          (0xFFFF)
-#define VEHICLEFLAG         0x8000
-#define ALL                 (0x7FFF)
-#define BEACON_ADDRESS(x)   (x&~VEHICLEFLAG)
-#define VEHICLE_ADDRESS(x)  (x|VEHICLEFLAG)
-
-#define ISA_BEACON(x)       (!(x&VEHICLEFLAG))
-#define ISA_VEHICLE(x)      (!ISA_BEACON(x))
-
-#define PURE_ADDRESS(x) (x&~VEHICLEFLAG)
+//#define VEHICLEFLAG         0x8000
+#define ALL                 (0xFFFE)
 
 // Sets the frame response timeout size ... keep as low as possible */
 #define NUM_ADDRESSES         (8)
@@ -141,6 +134,11 @@ extern const uint8_t idSeq[];           /* Unique identifier for management oper
 #if defined(LPC4367)
 #include "config-lpc4367.h"
 #endif
+
+// Flags describing remote entities
+#define FLAG_CHARGING               (1<<0)  /* Device is charging its battery at the moment */
+#define FLAG_EXTPWR                 (1<<1)  /* Device is running on external power */
+#define FLAG_NOMADIC                (1<<2)  /* Device is nomadic (i.e. should not be used for range calculations) */
 
 // ============================================================================================
 // ============================================================================================
@@ -248,6 +246,14 @@ extern void dbgprint(char *fmt, ...);
 // ============================================================================================
 // ============================================================================================
 // ============================================================================================
+struct calibFrame
+{
+  int16_t ofs[3];
+  int16_t scale[3];
+};
+
+enum CalibFrameInstance { CF_Acc, CF_Mag, CF_Gyr, CF_Max };
+#define AXIS_NAME (char *[]){"Acc","Mag","Gyr"}
 
 typedef struct
 
@@ -260,15 +266,32 @@ typedef struct
     uint32_t z;
     uint32_t distcheckInterval;
     BOOL isNomadic;
+  struct calibFrame c[CF_Max];
 } ConfigType;
 
 // FIXME - need a real ID
-#define DEFAULT_CONFIG { .versionNumber=VERSION_SEQ, .distcheckInterval = 100, .supplyV=3300, .id=32, .x=NOLOCATION, .y=NOLOCATION, .z=NOLOCATION, .isNomadic=TRUE }
+#define DEFAULT_CONFIG { \
+      .versionNumber=VERSION_SEQ, \
+      .distcheckInterval = 100, \
+      .supplyV=3300, \
+      .id=32, \
+      .x=NOLOCATION, .y=NOLOCATION, .z=NOLOCATION, .isNomadic=TRUE,\
+      .c[CF_Mag] = { .ofs={291,-135,289},  .scale={128,128,128} }, \
+      .c[CF_Acc] = { .ofs={0,0,0},         .scale={128,128,128} }, \
+      .c[CF_Gyr] = { .ofs={0,0,0},         .scale={128,128,128} }, \
+	 }
 
 extern ConfigType ConfigStore;
 extern BOOL wasDefaulted;
 extern BOOL isSaved;
 
+ALWAYS_INLINE struct calibFrame *ConfigGetCalibFrame(enum CalibFrameInstance i)
+
+{
+  if (i>=CF_Max)
+    return NULL;
+  return &ConfigStore.c[i];
+}
 ALWAYS_INLINE BOOL ConfigWasDefaulted(void) { return wasDefaulted; }
 ALWAYS_INLINE BOOL ConfigIsSaved(void) { return isSaved; }
 ALWAYS_INLINE uint32_t ConfigVersionNumber(void) { return ConfigStore.versionNumber; }

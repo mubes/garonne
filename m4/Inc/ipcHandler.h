@@ -56,17 +56,9 @@ struct buff
 
 struct ipcBuffer
 {
-    SemaphoreHandle_t TxEmpty;  /* Sempahore that TX buffer is freely available */
     struct buff m40;            /* M4 to M0 buffer */
     struct buff m04;            /* M0 to M4 buffer */
 };
-
-/* To avoid life getting complicated, make sure this is a multiple of 4 */
-#define IPC_QUEUE_LEN  (128)
-
-/* Where we place the buffers... */
-#define ADDR_IPCAPP_BUFFER (0x20008000)
-#define ADDR_IPCSUB_BUFFER (ADDR_IPCAPP_BUFFER+2*(sizeof(struct buff)+IPC_QUEUE_LEN))
 
 enum ipc {IPC_APP, IPC_SUB, NUM_IPCS, IPC_M4}; /* The IPC_M4 is a dummy for the M0 -> M4 communication direction */
 

@@ -228,7 +228,7 @@ void GIORGBLedSetColour(enum RGB_LED_ENUM l, uint32_t c)
 uint32_t GIOFlags(void)
 
 {
-    return ( (ConfigNomadic()?GIO_FLAG_NOMADIC:0) );
+    return ( (ConfigNomadic()?FLAG_NOMADIC:0) );
 }
 // ============================================================================================
 uint32_t GIOTemp(void)

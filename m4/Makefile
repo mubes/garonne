@@ -118,12 +118,6 @@ VL_DIR=thirdparty/VL530L0X
 INCLUDE_PATHS += -I$(VL_DIR)/inc 
 CFILES += $(shell find $(VL_DIR)/src -name "*.c" -print)
 
-# DECAWAVE Files
-# ===============
-DECA_DIR=thirdparty/decadriver
-INCLUDE_PATHS += -I$(DECA_DIR) 
-CFILES += $(shell find $(DECA_DIR) -name "*.c" -print)
-
 ##########################################################################
 # Project-specific files 
 ##########################################################################

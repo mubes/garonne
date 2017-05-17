@@ -13,11 +13,11 @@
 MEMORY
 {
   /* Define each memory region */
-  Flash_00 (rx) : ORIGIN = 0x1a000000, LENGTH = 0x80000 /* 512K bytes */
-  Flash_01 (rx) : ORIGIN = 0x1b000000, LENGTH = 0x80000 /* 512K bytes */
-  RamLoc32 (rwx) : ORIGIN = 0x10000000, LENGTH = 0x8000 /* 32K bytes */
-  RamLoc40 (rwx) : ORIGIN = 0x10080000, LENGTH = 0xA000 /* 40K bytes */
-  RamAHB32 (rwx) : ORIGIN = 0x20000000, LENGTH = 0x8000 /* 32K bytes */
+  Flash_00 (rx) : ORIGIN = 0x1a000000, LENGTH = 0x80000 /* 512K bytes -- USED BY M4 */
+  Flash_01 (rx) : ORIGIN = 0x1b000000, LENGTH = 0x80000 /* 512K bytes -- USED BY M0APP */
+  RamLoc32 (rwx) : ORIGIN = 0x10000000, LENGTH = 0x8000 /* 32K bytes -- USED BY M4 continues onto .... */
+  RamLoc40 (rwx) : ORIGIN = 0x10080000, LENGTH = 0xA000 /* 40K bytes -- USED BY M4 (STACK) */
+  RamAHB32 (rwx) : ORIGIN = 0x20000000, LENGTH = 0x8000 /* 32K bytes -- USED BY M0APP + TRANSFER BUFFER */
   RamAHB16 (rwx) : ORIGIN = 0x20008000, LENGTH = 0x4000 /* 16K bytes */
   RamAHB_ETB16 (rwx) : ORIGIN = 0x2000c000, LENGTH = 0x4000 /* 16K bytes */
   RamM0Sub16 (rwx) : ORIGIN = 0x18000000, LENGTH = 0x4000 /* 16K bytes */

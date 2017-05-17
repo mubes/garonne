@@ -66,6 +66,16 @@
 #define I2C0_BITRATE                    (400000)
 #define I2C0_INTPRIORITY                (7)
 
+// ------  IPC (ipcHandler.c)
+// --------------------------
+/* To avoid life getting complicated, make sure this is a multiple of 4 */
+#define IPC_QUEUE_LEN  (128)
+
+/* Where we place the buffers... */
+#define ADDR_IPCAPP_BUFFER (0x20007C00)
+#define ADDR_IPCSUB_BUFFER (ADDR_IPCAPP_BUFFER+2*(sizeof(struct buff)+IPC_QUEUE_LEN))
+
+
 // ----- DIST setup (either dist.c or vldist.c)
 // --------------------------------------------
 #define MINDIST                         (150)                           /* Minimum distance at which vehicle will eStop */
@@ -130,7 +140,9 @@ enum VLDIST_CHANNEL_ENUM {VLDIST_FRONT, VLDIST_REAR, VLDISTNONE };
 // ----- MPU9250 9D sensor Setup (nined.c)
 // ---------------------------------------
 
+#define AK8963_I2C_ADDR                 (0x0c)
 #define NINED_INT                       GPIOPINDEF(0x2,13, (SCU_MODE_FUNC0 | SCU_MODE_INBUFF_EN | SCU_MODE_INACT), 1,13)
+#define NINED_INT_PRI                   (6)
 #define NINED_SENSOR_ID                 (0x68)
 #define MAG_SENSOR_ID                   (0x0C)
 #define NINED_SENSOR_SPEED              (400000)
@@ -146,25 +158,25 @@ enum VLDIST_CHANNEL_ENUM {VLDIST_FRONT, VLDIST_REAR, VLDISTNONE };
 #define RANGE_ON_TERMINAL  // Define if you want ranging information to be output
 //#define REPORT_STATE_TRANSITIONS // Define to get information about state changes
 
-#define MAX_FRAME_SIZE 					127
+#define MAX_FRAME_SIZE 			127
 #define DW_SPI_PORT                     LPC_SSP1
 #define DW_SSP_CLKINDEX                 SYSCTL_CLOCK_SSP1
 #define DW_SSP_RESETINDEX               RESET_SSP1
 
-#define DW_PININT_HANDLER               GPIO4_IRQHandler
+#define DW_PININT_HANDLER               M0_GPIO4_IRQHandler
 #define DW_PININT_CHANNEL               (4)
-#define DW_PININT_NVIC_NAME     		PIN_INT4_IRQn
-#define DW_PININT_PRIORITY              (5)
-#define DW_LOW_SPI_SPEED 				(3000000)
-#define DW_HIGH_SPI_SPEED 				(10000000)
+#define DW_PININT_NVIC_NAME     	PIN_INT4_IRQn
+#define DW_PININT_PRIORITY              (6)
+#define DW_LOW_SPI_SPEED 		(3000000)
+#define DW_HIGH_SPI_SPEED 		(10000000)
 
 // Pin Allocations...
-#define DW_MISO                    		PINDEF(0x01, 3, (SCU_MODE_FUNC5 | SCU_MODE_INBUFF_EN))
-#define DW_MOSI                    		PINDEF(0x01, 4, (SCU_MODE_FUNC5))
-#define DW_SEL                     		GPIOPINDEF(0x06, 1, (SCU_MODE_FUNC0),3, 0)
-#define DW_CLK                     		PINDEF(0x0f, 4, (SCU_MODE_FUNC0))
-#define DW_INT                     		GPIOPINDEF(0x03, 5, (SCU_MODE_FUNC0|SCU_MODE_INBUFF_EN|SCU_MODE_ZIF_DIS|SCU_MODE_PULLDOWN), 1, 15)
-#define DW_RST                       GPIOPINDEF(0x2, 6, (SCU_MODE_FUNC4 | SCU_MODE_INBUFF_EN | SCU_MODE_INACT), 5, 6)
+#define DW_MISO                    	PINDEF(0x01, 3, (SCU_MODE_FUNC5 | SCU_MODE_INBUFF_EN))
+#define DW_MOSI                    	PINDEF(0x01, 4, (SCU_MODE_FUNC5))
+#define DW_SEL                     	GPIOPINDEF(0x06, 1, (SCU_MODE_FUNC0),3, 0)
+#define DW_CLK                     	PINDEF(0x0f, 4, (SCU_MODE_FUNC0))
+#define DW_INT                     	GPIOPINDEF(0x03, 5, (SCU_MODE_FUNC0|SCU_MODE_INBUFF_EN|SCU_MODE_ZIF_DIS|SCU_MODE_PULLDOWN), 1, 15)
+#define DW_RST                          GPIOPINDEF(0x2, 6, (SCU_MODE_FUNC4 | SCU_MODE_INBUFF_EN | SCU_MODE_INACT), 5, 6)
 
 
 // --- DEBUG LEDS (gio.c)
@@ -300,26 +312,6 @@ enum VLDIST_CHANNEL_ENUM {VLDIST_FRONT, VLDIST_REAR, VLDISTNONE };
 #define AUDIO_OUT                       GPIOPINDEF(0x04, 4, (SCU_MODE_FUNC0|SCU_MODE_PULLUP), 2, 4)
 #define AUDIO_INT_PRIORITY              (7)
 #endif
-
-
-// Radio subsystem (radio.c)
-// -------------------------
-/* Addressing constructs for vehicles and infrastructure */
-#define NOENTITY            0
-#define NODISTANCE          0
-#define NOLOCATION          (0xFFFF)
-#define VEHICLEFLAG         0x8000
-#define ALL                 (0x7FFF)
-#define BEACON_ADDRESS(x)   (x&~VEHICLEFLAG)
-#define VEHICLE_ADDRESS(x)  (x|VEHICLEFLAG)
-
-#define ISA_BEACON(x)       (!(x&VEHICLEFLAG))
-#define ISA_VEHICLE(x)      (!ISA_BEACON(x))
-
-#define PURE_ADDRESS(x) (x&~VEHICLEFLAG)
-
-// Sets the frame response timeout size ... keep as low as possible */
-#define NUM_ADDRESSES         (8)
 
 // ============================================================================================
 // ============================================================================================

@@ -1,4 +1,4 @@
-/*
+ /*
  *                                       ++++++++++++++++++
  *                                  +++++++++++++++++++++++++++++
  *                              +++++++                      +++++++++
@@ -29,36 +29,19 @@
  * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
  * OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
- * Generic I/O module
- * ==================
- *
- * This module is responsible for the setup and control of generic I/O stuff like the ID
- * bit getting and LED output.
- *
+ * ipcHandler.c
+ * ============
+ * IPC Exchange message handler.
  */
 
-#ifndef _GIO_H_
-#define _GIO_H_
+#ifndef IPCXHANDLER_H_
+#define IPCXHANDLER_H_
 
 #include "config.h"
 
-enum RGB_LED_ENUM {RGB0_LED, NUM_RGB_LED };
-enum DBG_LED_ENUM {DBG0_LED, NUM_DEBUG_LEDS };
-
-#define NO_BATT   (0)                   /* Indicator that there is no battery present */
-
 // ============================================================================================
-void GIOTaskRun(void);
-void GIORGBLedSetColour(enum RGB_LED_ENUM l, uint32_t c);
-uint16_t GIOBattery(void);
-void GIOSetConnected(BOOL newConnectedVal);
-void GIOdebugLedSet(enum DBG_LED_ENUM led);
-void GIOdebugLedClear(enum DBG_LED_ENUM led);
-void GIOdebugLedToggle(enum DBG_LED_ENUM led);
-void GIOSmoke(BOOL isSmoking);
-BOOL GIOUserButtonState(void);
-uint32_t GIOFlags(void);
-uint32_t GIOTemp(void);
-void GIOSetup(void);
+void IPCXProcessHandler(uint32_t e);
+
+void IPCXSetup(void);
 // ============================================================================================
-#endif /* _GIO_H_ */
+#endif /* IPCXHANDLER_H_ */

@@ -39,11 +39,21 @@
 
 #include <string.h>
 #include "ipcHandler.h"
+#ifdef IAM_M4
 #include "serport.h"
+#endif
 #include "config.h"
 #include "FreeRTOS.h"
 #include "queue.h"
 
+/* For the uplink direction, set the index to be used for this instance */
+#ifdef IAM_M0APP
+#define SUBINDEX IPC_APP
+#endif
+
+#ifdef IAM_M0SUB
+#define SUBINDEX IPC_SUB
+#endif
 // ============================================================================================
 #define MAX_CLOSE_DELAY 1000  /* Max time in mS to wait for port to be flushed */
 #define STANDARD_TIMEOUT 100 /* Max time in mS to wait for character space to be available */
@@ -51,19 +61,10 @@
 /* We only need a single serial callback for all ports */
 static EVENT_CB(*_serial_cb);
 
-#ifdef IAM_M4
 static volatile struct /* Dynamic state of a port */
 {
     struct ipcBuffer *buff;
 } _state[NUM_IPCS];
-#else
-/* The M0s can only see the M4 */
-
-static volatile struct /* Dynamic state of a port */
-{
-    struct ipcBuffer *buff;
-} _state;
-#endif
 
 // ============================================================================================
 // ============================================================================================
@@ -72,52 +73,53 @@ static volatile struct /* Dynamic state of a port */
 // ============================================================================================
 // ============================================================================================
 // ============================================================================================
-void M0CORE_IRQHandler(void)
-
-/* Interrupt happens either because the last data has been consumed by the recipient, or there
- * is data for us. We cannot tell which, so need to look at the buffers to check.
- */
-{
-    portBASE_TYPE xTaskWoken = pdFALSE;
-
 #ifdef IAM_M4
+
+void M0CORE_IRQHandler(void) ALIAS(M0APP_IRQHandler);
+void M0APP_IRQHandler(void)
+
+{
+    /* Clear down the interrupt */
+    Chip_CREG_ClearM0AppEvent();
+
     /* Reception check first */
     if (_state[IPC_APP].buff->m04.rp!=_state[IPC_APP].buff->m04.wp)
     {
         CALLBACK(_serial_cb,(SERPORT_EV_DATARX|(SERPORT_M0APP<<8)));
     }
+}
 
+void M0SUB_IRQHandler(void)
+
+{
+    /* Clear down the interrupt */
+    Chip_CREG_ClearM0SubEvent();
+
+    /* Reception check first */
     if (_state[IPC_SUB].buff->m04.rp!=_state[IPC_SUB].buff->m04.wp)
     {
         CALLBACK(_serial_cb,(SERPORT_EV_DATARX|(SERPORT_M0SUB<<8)));
     }
+}
+#endif
 
-    /* ....and now the transmission side */
-    if (_state[IPC_APP].buff->m40.rp!=_state[IPC_APP].buff->m40.wp)
-    {
-        xSemaphoreGiveFromISR(_state[IPC_APP].buff->TxEmpty,&xTaskWoken);
-    }
+#if defined(IAM_M0APP) | defined(IAM_M0SUB)
+void M0_M4CORE_IRQHandler(void)
 
-    if (_state[IPC_SUB].buff->m40.rp==_state[IPC_SUB].buff->m40.wp)
-    {
-        xSemaphoreGiveFromISR(_state[IPC_APP].buff->TxEmpty,&xTaskWoken);
-    }
-#else
+/* Interrupt happens either because the last data has been consumed by the recipient, or there
+ * is data for us. We cannot tell which, so need to look at the buffers to check.
+ */
+{
+    /* Clear down the interrupt */
+    Chip_CREG_ClearM4Event();
+
     /* Reception check */
-    if (_state.buff->m40.rp!=_state.buff->m40.wp)
+    if (_state[SUBINDEX].buff->m40.rp!=_state[SUBINDEX].buff->m40.wp)
     {
         CALLBACK(_serial_cb,(SERPORT_EV_DATARX|(SERPORT_M4<<8)));
     }
-
-    /* ... and transmission */
-    if (_state.buff->m04.rp==_state.buff->m04.wp)
-    {
-        xSemaphoreGiveFromISR(_state.buff->TxEmpty,&xTaskWoken);
-    }
-#endif
-
-    portEND_SWITCHING_ISR(xTaskWoken);
 }
+#endif
 // ============================================================================================
 // ============================================================================================
 // ============================================================================================
@@ -139,7 +141,7 @@ uint32_t ipcTxt(enum ipc port, uint32_t ticksToWait, uint8_t *d, uint32_t len)
     b=&(_state[port].buff->m40);
 #else
     ASSERT(port==IPC_M4);
-    b=&(_state.buff->m04);
+    b=&(_state[SUBINDEX].buff->m04);
 #endif
 
     /* If the port currently has space in the queue then we can queue directly */
@@ -150,6 +152,7 @@ uint32_t ipcTxt(enum ipc port, uint32_t ticksToWait, uint8_t *d, uint32_t len)
         if (n==b->rp)
         {
             /* We are full, stop queuing */
+            b->buffer[b->wp]='*';
             break;
         }
 
@@ -159,35 +162,11 @@ uint32_t ipcTxt(enum ipc port, uint32_t ticksToWait, uint8_t *d, uint32_t len)
         b->wp=n;
     }
 
-    /* Well, certainly something has been sent, so trigger the other core */
+    /* Well, something has been sent, so trigger the other core. Even if it hasn't been */
+    /* sent then triggering the interrupt again is a decent safety feature */
     __DSB();
     __SEV();
 
-    if (len)
-    {
-        /* Now queue up the remainder _with_ a delay */
-#ifdef IAM_M4
-        while ((len) && (xSemaphoreTake(_state[port].buff->TxEmpty,ticksToWait)))
-#else
-         while ((len) && (xSemaphoreTake(_state.buff->TxEmpty,ticksToWait)))
-#endif
-        {
-            while (len)
-            {
-                uint32_t n=((b->wp)+1)%b->len; /* This is the next space */
-                if (n==b->rp)
-                {
-                    /* We are full, stop queuing */
-                    break;
-                }
-
-                /* There is space - write this and move along */
-                b->buffer[b->wp]=*d++;
-                len--;
-                b->wp=n;
-            }
-        }
-    }
     return (attemptedLen-len);
 }
 // ============================================================================================
@@ -205,6 +184,24 @@ BOOL ipcOpenPort(enum ipc port)
 
 {
     ASSERT(port < NUM_IPCS);
+#ifdef IAM_M4
+    if (port==IPC_APP)
+    {
+        NVIC_SetPriority(M0APP_IRQn , 7);
+        NVIC_EnableIRQ(M0APP_IRQn);
+    }
+
+    if (port==IPC_SUB)
+    {
+        NVIC_SetPriority(M0SUB_IRQn , 7);
+        NVIC_EnableIRQ(M0SUB_IRQn);
+    }
+#endif
+
+#if defined(IAM_M0APP) | defined (IAM_M0SUB)
+    NVIC_SetPriority(M4_IRQn , 7);
+    NVIC_EnableIRQ(M4_IRQn);
+#endif
 
     return TRUE;
 }
@@ -214,20 +211,22 @@ uint8_t ipcGetRx(enum ipc port)
 /* Get rx data for this port */
 
 {
+    uint8_t r=0;
     ASSERT(port < NUM_IPCS);
 
-    if (!uartDataPending(port))
+    if (!ipcDataPending(port))
     {
         return  0;
     }
-
 #ifdef IAM_M4
-    return _state[port].buff->m04.buffer[(_state[port].buff->m04.rp=((_state[port].buff->m04.rp)+1)%_state[port].buff->m04.len)];
+    r=_state[port].buff->m04.buffer[(_state[port].buff->m04.rp=((_state[port].buff->m04.rp)+1)%_state[port].buff->m04.len)];
 #else
     ASSERT(port==IPC_M4);
-    return _state.buff->m40.buffer[(_state.buff->m40.rp=((_state.buff->m40.rp)+1)%_state.buff->m40.len)];
+    r=_state[SUBINDEX].buff->m40.buffer[_state[SUBINDEX].buff->m40.rp];
+    _state[SUBINDEX].buff->m40.rp=((_state[SUBINDEX].buff->m40.rp)+1)%_state[SUBINDEX].buff->m40.len;
 #endif
-    return 0;
+
+    return r;
 }
 // ============================================================================================
 BOOL ipcConnected(enum ipc  port)
@@ -248,7 +247,7 @@ BOOL ipcDataPending(enum ipc port)
     return (_state[port].buff->m04.rp!=_state[port].buff->m04.wp);
 #else
     ASSERT(port==IPC_M4);
-    return (_state.buff->m40.rp!=_state.buff->m40.wp);
+    return (_state[SUBINDEX].buff->m40.rp!=_state[SUBINDEX].buff->m40.wp);
 #endif
 
     return 0;
@@ -273,7 +272,7 @@ void ipcFlush(enum ipc port)
     _state[port].buff->m40.rp=_state[port].buff->m40.wp;
 #else
     ASSERT(port==IPC_M4);
-    _state.buff->m04.rp=_state.buff->m04.wp;
+    _state[SUBINDEX].buff->m04.rp=_state[SUBINDEX].buff->m04.wp;
 #endif
 }
 // ============================================================================================
@@ -283,30 +282,21 @@ void ipcInit(EVENT_CB(*cb_set))
 
 {
     _serial_cb=cb_set;
+    uint8_t *allocframe=(uint8_t *)ADDR_IPCAPP_BUFFER;
 
-#ifdef IAM_M4
     /* Set the locations where these buffers will be held */
-    _state[IPC_APP].buff = (struct ipcBuffer *)ADDR_IPCAPP_BUFFER;
+    _state[IPC_APP].buff = (struct ipcBuffer *)allocframe; allocframe+=sizeof(struct ipcBuffer);
     bzero(_state[IPC_APP].buff,sizeof(struct ipcBuffer));
-    _state[IPC_APP].buff->m40.buffer=(uint8_t *)(ADDR_IPCAPP_BUFFER+sizeof(struct ipcBuffer));
-    _state[IPC_APP].buff->m04.buffer=(uint8_t *)(ADDR_IPCAPP_BUFFER+IPC_QUEUE_LEN+sizeof(struct ipcBuffer));
+    _state[IPC_APP].buff->m40.buffer=(uint8_t *)allocframe; allocframe+=IPC_QUEUE_LEN;
+    _state[IPC_APP].buff->m04.buffer=(uint8_t *)allocframe; allocframe+=IPC_QUEUE_LEN;
     _state[IPC_APP].buff->m40.len=IPC_QUEUE_LEN;
     _state[IPC_APP].buff->m04.len=IPC_QUEUE_LEN;
 
-    _state[IPC_SUB].buff = (struct ipcBuffer *)ADDR_IPCSUB_BUFFER;
+    _state[IPC_SUB].buff = (struct ipcBuffer *)allocframe; allocframe+=sizeof(struct ipcBuffer);
     bzero(_state[IPC_SUB].buff,sizeof(struct ipcBuffer));
-    _state[IPC_SUB].buff->m40.buffer=(uint8_t *)(ADDR_IPCSUB_BUFFER+sizeof(struct ipcBuffer));
-    _state[IPC_SUB].buff->m04.buffer=(uint8_t *)(ADDR_IPCSUB_BUFFER+IPC_QUEUE_LEN+sizeof(struct ipcBuffer));
+    _state[IPC_SUB].buff->m40.buffer=(uint8_t *)allocframe; allocframe+=IPC_QUEUE_LEN;
+    _state[IPC_SUB].buff->m04.buffer=(uint8_t *)allocframe; allocframe+=IPC_QUEUE_LEN;
     _state[IPC_SUB].buff->m40.len=IPC_QUEUE_LEN;
     _state[IPC_SUB].buff->m04.len=IPC_QUEUE_LEN;
-#else
-    /* Set the locations where these buffers will be held */
-    _state.buff = (struct ipcBuffer *)ADDR_IPCAPP_BUFFER;
-    bzero(_state.buff,sizeof(struct ipcBuffer));
-    _state.buff->m40.buffer=(uint8_t *)(ADDR_IPCAPP_BUFFER+sizeof(struct ipcBuffer));
-    _state.buff->m04.buffer=(uint8_t *)(ADDR_IPCAPP_BUFFER+IPC_QUEUE_LEN+sizeof(struct ipcBuffer));
-    _state.buff->m40.len=IPC_QUEUE_LEN;
-    _state.buff->m04.len=IPC_QUEUE_LEN;
-#endif
 }
 // ============================================================================================
