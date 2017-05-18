@@ -52,6 +52,7 @@
 #include "semphr.h"
 #include "timers.h"
 #include "cmsis.h"
+#include "datax.h"
 
 /* Define one of these for the board revision you're building for */
 #define VL_DISTANCE         // <<< Using VL distance sensor rather than Ultrasonics
@@ -79,6 +80,8 @@
 #define COPYRIGHT_STATEMENT     "(C) 2015-2016 Garonne"
 #define PRODUCTNAME             "Icarus_III"
 #define UUID                     0x53,0xce,0x1b,0x11,0xdd,0x8f,0x47,0x94,0xbf,0x1c,0xb0,0x62,0x64,0x71,0x4e,0xa1
+#define MAGICNUMBER             0x12190405      /* Magic number showing that there's valid data in the store */
+
 #define VERSION_SEQ              0x16122301
 
 extern const uint8_t idSeq[];           /* Unique identifier for management operations */
@@ -121,7 +124,6 @@ extern const uint8_t idSeq[];           /* Unique identifier for management oper
 #define NOENTITY            0
 #define NODISTANCE          0
 #define NOLOCATION          (0xFFFF)
-//#define VEHICLEFLAG         0x8000
 #define ALL                 (0xFFFE)
 
 // Sets the frame response timeout size ... keep as low as possible */
@@ -309,6 +311,30 @@ ALWAYS_INLINE BOOL ConfigSetdistcheckInterval(BOOL distcheckSet)
 {
     isSaved = FALSE;
     ConfigStore.distcheckInterval = distcheckSet;
+    return TRUE;
+}
+
+ALWAYS_INLINE BOOL ConfigSetID(uint32_t idSet)
+
+{
+    isSaved = FALSE;
+    ConfigStore.id = idSet;
+    return TRUE;
+}
+
+ALWAYS_INLINE BOOL ConfigSetCalibFrame(enum CalibFrameInstance i, int16_t ox, int16_t oy, int16_t oz, int16_t sx, int16_t sy, int16_t sz)
+
+{
+    if (i>=CF_Max)
+        return FALSE;
+
+    ConfigStore.c[i].ofs[0]=ox;
+    ConfigStore.c[i].ofs[1]=oy;
+    ConfigStore.c[i].ofs[2]=oz;
+    ConfigStore.c[i].scale[0]=sx;
+    ConfigStore.c[i].scale[1]=sy;
+    ConfigStore.c[i].scale[2]=sz;
+    isSaved=FALSE;
     return TRUE;
 }
 

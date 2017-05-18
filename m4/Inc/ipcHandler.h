@@ -29,7 +29,7 @@
  * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
  * OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
- * ipcHandler.c
+ * ipcHandler.h
  * ============
  * Generic Communication from the M4 CPU to one of the subsidiary M0s.
  * Receivers are defined in terms of FreeRTOS buffers so we can just monitor a receive buffer to check when there's
@@ -54,13 +54,30 @@ struct buff
     uint8_t *buffer;
 };
 
+
+#ifndef IAM_M4
+typedef enum {SERPORT_M4, NUM_SERPORTS} serportEnumType;
+#define SERPORT_MASK (1<<SERPORT_M4)
+#define SERPORT_TX(x) (1<<(3*x))
+#define SERPORT_RX(x) ((1<<((3*x)+1)))
+#define SERPORT_OPEN(x) ((1<<((3*x)+2)))
+
+typedef enum {  SERPORT_EV_NONE=0,
+                SERPORT_EV_CONNECT=(1<<0),
+                SERPORT_EV_CLOSE=(1<<1),
+                SERPORT_EV_DATARX=(1<<2),
+                SERPORT_EV_BREAKRX=(1<<3),
+                SERPORT_EV_CTRLCHANGE=(1<<4)
+             } serportEventType;
+#endif
+
 struct ipcBuffer
 {
     struct buff m40;            /* M4 to M0 buffer */
     struct buff m04;            /* M0 to M4 buffer */
 };
 
-enum ipc {IPC_APP, IPC_SUB, NUM_IPCS, IPC_M4}; /* The IPC_M4 is a dummy for the M0 -> M4 communication direction */
+enum ipc {IPC_APP, IPC_SUB, NUM_IPCS, IPC_M4=0}; /* The IPC_M4 is a dummy for the M0 -> M4 communication direction */
 
 // ============================================================================================
 void ipcInit(EVENT_CB(*cb_set));          ///< Create the communication subsystem
@@ -73,7 +90,9 @@ uint8_t ipcGetRx(enum ipc port);          ///< Get received data element
 BOOL ipcDataPending(enum ipc port);       ///< Check to see if there is any data pending
 BOOL ipcConnected(enum ipc port);         ///<IPC Connected Status
 
-uint32_t ipcTx(enum ipc port, uint8_t *d, uint8_t len);  ///< Transmit through the port
-uint32_t ipcTxt(enum ipc port, uint32_t ticksToWait, uint8_t *d, uint32_t len); ///< Transmit and wait if needed
+
+BOOL ipcTxRoomCheck(enum ipc port, uint32_t len);
+void ipcAlertFarEnd(void);
+BOOL ipcTx(enum ipc port, uint8_t *d, uint32_t len);  ///< Transmit through the port
 // ============================================================================================
 #endif /* IPCHANDLER_H_ */

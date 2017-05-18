@@ -1,4 +1,4 @@
- /*
+/*
  *                                       ++++++++++++++++++
  *                                  +++++++++++++++++++++++++++++
  *                              +++++++                      +++++++++
@@ -29,44 +29,61 @@
  * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
  * OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
- * IPCX module
- * ===========
- *
- * This module takes input from the ipc link and dispatches it appropriately.
- *
+ * Data Exchange
+ * =============
+ * Messages between the M0 and the M4 CPUs.
  */
 
-#include <ctype.h>
-#include <string.h>
-#include <strings.h>
-#include <stdlib.h>
-#include "serport.h"
-#include "mainloop.h"
+#ifndef _DEX_
+#define _DEX_
 
-// ============================================================================================
-// ============================================================================================
-// ============================================================================================
-// Publicly available routines
-// ============================================================================================
-// ============================================================================================
-// ============================================================================================
-void IPCXProcessHandler(uint32_t e)
+// Messages between M0 and M4 processors
+// CC DDD SSS  MMMMMMMM
+
+#define MSG_CLASS_MANAGEMENT         (0)
+#define MSG_CLASS_DATA               (1)
+#define MSG_CLASS_ACTION             (2)
+#define MSG_CLASS(x)                 ((x&3)<<14)
+#define MSG_GET_CLASS(x)             ((x>>14)&3)
+
+#define ANY_TO_ANY                   (0)
+#define M0APP_TO_M4                  (1)
+#define M0APP_TO_M0SUB               (2)
+#define M0SUB_TO_M4                  (3)
+#define M0SUB_TO_M0APP               (4)
+#define M4_TO_M0APP                  (5)
+#define M4_TO_M0SUB                  (6)
+
+#define MSG_DIR(x)                   ((x&7)<<11)
+#define MSG_GET_DIR(x)               ((x>>11)&7)
+
+#define MSG_SEQ(x)                   ((x&7)<<8)
+#define MSG_GET_SEQ(x)               ((x>>8)&7)
+
+#define MSG(x)                       (x&0xFF)
+#define MSG_GET_MSG(x)               (x&0xFF)
+// =============================================
+#define MSG_NULL                    0
+#define MSG_PING                    1
+#define MSG_PONG                    2
+#define MSG_ENC_NULL                (MSG(MSG_NULL)|MSG_DIR(ANY_TO_ANY)|MSG_CLASS(MSG_CLASS_MANAGEMENT))
+#define MSG_ENC_PING                (MSG(MSG_PING)|MSG_DIR(ANY_TO_ANY)|MSG_CLASS(MSG_CLASS_MANAGEMENT))
+#define MSG_ENC_PONG                (MSG(MSG_PONG)|MSG_DIR(ANY_TO_ANY)|MSG_CLASS(MSG_CLASS_MANAGEMENT))
+
+#define MSG_STRING                  1
+#define MSG_PSNANDATT               2
+#define MSG_ENC_STRING              (MSG(MSG_STRING)|MSG_DIR(ANY_TO_ANY)|MSG_CLASS(MSG_CLASS_DATA))
+#define MSG_ENC_PSNANDATT           (MSG(MSG_PSNANDATT)|MSG_DIR(M0APP_TO_M4)|MSG_CLASS(MSG_CLASS_DATA))
+
+struct MSGpsnandatt
 
 {
-    if (e & SERPORT_EV_DATARX)
-        {
-            /* Copy material from the IPC port to the serial port */
-            while (serportDataPending(SERPORT_M0APP))
-                {
-                    uint8_t t=serportGetRx(SERPORT_M0APP);
-                    serportTx(TERMINAL_PORT,&t,1);
-                }
-        }
-}
+  int16_t psn[3];
+  int16_t q[4];
+  int16_t temp;
+  uint32_t tsPsn;
+  uint32_t tsQ;
+};
 // ============================================================================================
-void IPCXSetup(void)
-{
-    serportOpenPort(SERPORT_M0APP, TERMINAL_BAUDRATE,
-                    UART_LCR_WLEN8 | UART_LCR_SBS_1BIT | UART_LCR_PARITY_DIS);
-}
-// ============================================================================================
+#endif
+

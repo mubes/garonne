@@ -37,6 +37,7 @@
  */
 
 
+#include "../Inc/ipcMsg.h"
 #include "gio.h"
 #include "uartHandler.h"
 #include "ui.h"
@@ -50,7 +51,6 @@
 #include "motor.h"
 #include "rotenc.h"
 #include "lms.h"
-#include "nined.h"
 #include "mainloop.h"
 #include "leds.h"
 #include "sdif.h"
@@ -58,15 +58,15 @@
 #include "audio.h"
 #include "can.h"
 #include "generics.h"
-#include "ipcExchange.h"
 #include "ipcHandler.h"
+#include "serdes.h"
+#include "ipcMsg.h"
 
 /* Intervals at which data are asynchronously sent to HLB */
 #define BATTERY_STATUS_INTERVAL (MILLIS_TO_TICKS(1000))
 #define LEDCHECK_INTERVAL       (MILLIS_TO_TICKS(100))
 #define REVS_ENC_TX_INTERVAL    (MILLIS_TO_TICKS(100))
 #define VEHICLE_STATUS_INTERVAL (MILLIS_TO_TICKS(50))
-#define NINED_INTERVAL          (MILLIS_TO_TICKS(100))
 #define VL_INTERVAL             (MILLIS_TO_TICKS(100))
 
 struct MLStruct
@@ -82,7 +82,6 @@ static portTASK_FUNCTION( _i2cThread, pvParameters )
 {
     uint32_t evSet;
     uint32_t nowTicks;
-    uint32_t lastninedEnc=0; /* Last time nined was sent */
     uint32_t lastvl=0;       /* Last time VL sensor was read */
 
     BOOL haveVLSensor=FALSE;
@@ -94,7 +93,6 @@ static portTASK_FUNCTION( _i2cThread, pvParameters )
 
     LEDInit();
     vTaskDelay(GYRO_WAKEUP_TIME);
-    //ninedInit();
 
     while (1)
         {
@@ -104,12 +102,6 @@ static portTASK_FUNCTION( _i2cThread, pvParameters )
             if (evSet & (1 << ML_PRINT_LEDS))
                 LEDDoPrint();
 
-            if (nowTicks - lastninedEnc > NINED_INTERVAL)
-                {
-                //ninedCheckOutput();
-                    lastninedEnc = nowTicks;
-                }
-
 #ifdef VL_DISTANCE
             if ((haveVLSensor) && (nowTicks - lastvl > VL_INTERVAL))
                 {
@@ -118,6 +110,15 @@ static portTASK_FUNCTION( _i2cThread, pvParameters )
                 }
 #endif
         }
+}
+// ============================================================================================
+EVENT_CB(_ipcEv)
+
+/* routine that is called when an IPC transaction is triggered */
+
+{
+    BaseType_t xTaskWoken = MLUpdateAvailableFromISR((j==IPC_APP)?EVENT_M0APP:EVENT_M0SUB);
+    portEND_SWITCHING_ISR(xTaskWoken);
 }
 // ============================================================================================
 static portTASK_FUNCTION( _mainThread, pvParameters )
@@ -143,7 +144,8 @@ static portTASK_FUNCTION( _mainThread, pvParameters )
 #endif
     RotencInit();
     UISetup();
-    IPCXSetup();
+    IPCMsgSetup();
+    ipcInit(_ipcEv);
 
     /* Optional components */
 #ifdef INCLUDE_ETHERNET
@@ -183,14 +185,14 @@ static portTASK_FUNCTION( _mainThread, pvParameters )
                     CHECK(TRUE, UISeize(FALSE));
                 }
             // ---------------------
-            if (evSet & (1 << SERPORT_M0APP))
+            if (evSet & (1 << EVENT_M0APP))
                 {
-                    IPCXProcessHandler(serportGetEvent(SERPORT_M0APP));
+                    serdesReceive(IPC_APP);
                 }
             // ---------------------
-            if (evSet & (1 << SERPORT_M0SUB))
+            if (evSet & (1 << EVENT_M0SUB))
                 {
-                    IPCXProcessHandler(serportGetEvent(SERPORT_M0SUB));
+                    serdesReceive(IPC_SUB);
                 }
             // ---------------------
 #ifndef VL_DISTANCE
@@ -208,7 +210,7 @@ static portTASK_FUNCTION( _mainThread, pvParameters )
             /* =============================================== */
             if (nowTicks - lastBatteryEnc > BATTERY_STATUS_INTERVAL)
                 {
-//                    LmsSendBatteryStatus(ninedTemp(), 0, 0, GIOBattery());
+                    LmsSendBatteryStatus(IPCMsgGetpsanandatt()->temp, 0, 0, GIOBattery());
                     lastBatteryEnc = nowTicks;
                 }
             // ---------------------
@@ -239,7 +241,7 @@ void MLDistCheckOutput(void)
 
 {
     // FIXME
-//    LmsSendBatteryStatus(ninedTemp(), 0, 0, GIOBattery()); // temperature actually read from 9D sensor...
+    LmsSendBatteryStatus(IPCMsgGetpsanandatt()->temp, 0, 0, GIOBattery()); // temperature actually read from 9D sensor...
 }
 // ============================================================================================
 void MLUpdateAvailable(uint32_t sensor)

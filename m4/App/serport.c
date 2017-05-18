@@ -53,7 +53,6 @@
 #include "terminal.h"
 #include "mainloop.h"
 #include "lms.h"
-#include "ipcHandler.h"
 
 #define SEM_BLOCK_TIME (1000) /* Time in milliseconds to wait for transmission to become possible */
 
@@ -89,7 +88,7 @@ EVENT_CB(_usb_cb)
 EVENT_CB(_serial_cb)
 
 /* This is the callback from the Serial stack when something interesting has happened.
- * This routine may be called from interrupt level. This routine also handles the IPC ports.
+ * This routine may be called from interrupt level.
  */
 
 {
@@ -123,12 +122,6 @@ uint32_t serportTxt(serportEnumType serport, uint32_t ticksToWait, uint8_t *d, u
         {
             _stat|=SERPORT_TX(serport);
             retval=uartTxt(serport, ticksToWait, d, len);
-        }
-
-    if (SERPORT_ISIPC(serport))
-        {
-            _stat|=SERPORT_TX(serport);
-            retval=ipcTxt(SERPORT_GETIPC(serport), ticksToWait, d, len);
         }
 
 #ifdef INCLUDE_USB
@@ -169,9 +162,6 @@ uint32_t serportMultiput(serportEnumType serport, uint32_t ticksToWait, uint8_t 
                 {
                     retval=uartMultiput(serport-SERPORT_UART0, ticksToWait, c, len);
                 }
-
-            /* We don't support multiput for IPC */
-            ASSERT(!SERPORT_ISIPC(serport));
 
 #ifdef INCLUDE_USB
             if (SERPORT_ISUSB(serport))
@@ -226,9 +216,6 @@ uint8_t serportGetRx(serportEnumType serport)
     if (SERPORT_ISUART(serport))
         return uartGetRx(serport);
 
-    if (SERPORT_ISIPC(serport))
-        return ipcGetRx(SERPORT_GETIPC(serport));
-
 #ifdef INCLUDE_USB
     return vcomGetRx();
 #else
@@ -243,9 +230,6 @@ BOOL serportDataPending(serportEnumType serport)
 {
     if (SERPORT_ISUART(serport))
         return uartDataPending(serport);
-
-    if (SERPORT_ISIPC(serport))
-        return ipcDataPending(SERPORT_GETIPC(serport));
 
 #ifdef INCLUDE_USB
     if (SERPORT_ISUSB(serport))
@@ -269,13 +253,6 @@ BOOL serportOpenPort(serportEnumType serport, uint32_t baudrate, uint32_t bitCon
                 }
             return FALSE;
         }
-
-    if (SERPORT_ISIPC(serport))
-    {
-        ipcOpenPort(SERPORT_GETIPC(serport));
-        _serial_cb(SERPORT_EV_CONNECT|(serport<<8));
-        return TRUE;
-    }
 
     /* There is nothing to do for USB serial open - it's always there */
     if (SERPORT_ISUSB(serport))
@@ -310,12 +287,6 @@ BOOL serportFlush(serportEnumType serport)
             return TRUE;
         }
 
-    if (SERPORT_ISIPC(serport))
-        {
-            ipcFlush(GETPORT_GETIPC(serport));
-            return TRUE;
-        }
-
 #ifdef INCLUDE_USB
     if (SERPORT_ISUSB(serport))
         {
@@ -335,11 +306,6 @@ BOOL serportIsOpen(serportEnumType serport)
     if (SERPORT_ISUART(serport))
         {
             return uartConnected(serport);
-        }
-
-    if (SERPORT_ISIPC(serport))
-        {
-            return ipcConnected(SERPORT_GETIPC(serport));
         }
 
 #ifdef INCLUDE_USB
@@ -395,7 +361,6 @@ void serportInit(void)
 
     /* Set up the callbacks to deliver results to us */
     uartInit(_serial_cb);
-    ipcInit(_serial_cb);
 #ifdef INCLUDE_USB
     USBInit(_usb_cb);
 #endif

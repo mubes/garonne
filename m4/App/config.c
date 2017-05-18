@@ -46,8 +46,10 @@
 #include "config.h"
 #include "serport.h"
 #include "gio.h"
+#include "eeprom.h"
 
-#define ID_BASE (0x40045000)
+#define ID_BASE     (0x40045000)
+#define EEPROM_BASE (0x20040000)
 
 #define ITM_CONSOLE                     /* Send debug output to ITM Channel (or Terminal, otherwise) */
 
@@ -60,9 +62,9 @@ static uint32_t chipSerialNumber[4];    /* Storage for chip serial number */
 // Structure of the EEPROM storage - This is internal!!
 // ===============================
 
+
 #define EEPROM_CONFIG_OFFSET (0)    // Location of config in EEPROM
-//      uint32_t version
-//      ConfigType Config
+
 
 // ============================================================================================
 // ============================================================================================
@@ -149,21 +151,78 @@ void dbgprint(char *fmt, ...)
 #endif
 #endif
 // ============================================================================================
+static void _EEPROM_Read(uint32_t ofs, void *d, uint32_t count)
+
+{
+    ofs+=EEPROM_BASE;
+    /* Do full 32-bit transfers as far as possible */
+    while (count>3)
+    {
+        *(uint32_t *)d=*((uint32_t *)ofs);
+        ofs+=4;
+        d+=4;
+        count-=4;
+    }
+
+    /* Deal with any residual bytes */
+    uint8_t *db=(uint8_t *)d;
+
+    while (count--)
+    {
+        *db++=*((uint8_t *)ofs++);
+    }
+}
+// ============================================================================================
+static void _EEPROM_Write(uint32_t ofs, uint32_t *ptr, uint32_t size)
+
+{
+    ofs += EEPROM_BASE;
+    while (size)
+    {
+        *((uint32_t *)ofs)=*ptr++;
+        ofs+=4;
+        size=(size>4)?size-4:0;
+        if ((!size) || (!(ofs&0x7f)))
+            Chip_EEPROM_EraseProgramPage(LPC_EEPROM);
+    }
+}
+// ============================================================================================
 void ConfigInit(void)
 
 /* Initialise a configuration either from EEPROM or default if EEPROM isn't valid */
 
 {
+    uint32_t magicCheck;
+    uint32_t readLength;
+
     /* First things first, identify the chip */
     /* read serial - stored in magic location ... See UM10503 Rev 1.9 Pg 42 (Table 14) */
     for (uint32_t i=0; i<4; i++)
         chipSerialNumber[i]=((uint32_t *)ID_BASE)[i];
 
+    Chip_EEPROM_Init(LPC_EEPROM);
+    Chip_EEPROM_SetAutoProg(LPC_EEPROM,EEPROM_AUTOPROG_OFF);
 
-    /* Version didn't match, so load a default */
+
     ConfigStore=(ConfigType)DEFAULT_CONFIG;
     wasDefaulted=TRUE;
     isSaved=FALSE;
+
+    _EEPROM_Read(EEPROM_CONFIG_OFFSET,&magicCheck, sizeof(uint32_t));
+
+    if (MAGICNUMBER==magicCheck)
+        {
+            /* There's something useful here, overload it onto the pre-config */
+            _EEPROM_Read(EEPROM_CONFIG_OFFSET+sizeof(uint32_t),&readLength, sizeof(uint32_t));
+
+            if (readLength<=sizeof(ConfigStore))
+                {
+                    /* Only read it in if its a sane length */
+                    _EEPROM_Read(EEPROM_CONFIG_OFFSET+2*sizeof(uint32_t),&ConfigStore, readLength);
+                    wasDefaulted=FALSE;
+                    isSaved=TRUE;
+                }
+        }
 }
 // ============================================================================================
 const uint32_t *ConfigGetSerialNumber(void)
@@ -179,6 +238,15 @@ BOOL ConfigCommit(void)
 /* Save the current configuration to EEPROM */
 
 {
-    return FALSE;
+    uint32_t scratch=MAGICNUMBER;
+
+    _EEPROM_Write(EEPROM_CONFIG_OFFSET,&scratch,sizeof(uint32_t));
+    scratch=sizeof(ConfigStore);
+    _EEPROM_Write(EEPROM_CONFIG_OFFSET+sizeof(uint32_t),&scratch,sizeof(uint32_t));
+    _EEPROM_Write(EEPROM_CONFIG_OFFSET+2*sizeof(uint32_t),(uint32_t *)&ConfigStore,sizeof(ConfigStore));
+
+    isSaved=TRUE;
+    wasDefaulted=FALSE;
+    return TRUE;
 }
 // ============================================================================================

@@ -34,6 +34,8 @@
  *
  * Handle 9D sensor readings
  *
+ * WARNING: This module is not in use because the code on the M0 handles these tasks much better.
+ *
  */
 
 #include "config.h"

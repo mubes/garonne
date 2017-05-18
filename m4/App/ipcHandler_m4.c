@@ -85,7 +85,7 @@ void M0APP_IRQHandler(void)
     /* Reception check first */
     if (_state[IPC_APP].buff->m04.rp!=_state[IPC_APP].buff->m04.wp)
     {
-        CALLBACK(_serial_cb,(SERPORT_EV_DATARX|(SERPORT_M0APP<<8)));
+        CALLBACK(_serial_cb,IPC_APP);
     }
 }
 
@@ -98,7 +98,7 @@ void M0SUB_IRQHandler(void)
     /* Reception check first */
     if (_state[IPC_SUB].buff->m04.rp!=_state[IPC_SUB].buff->m04.wp)
     {
-        CALLBACK(_serial_cb,(SERPORT_EV_DATARX|(SERPORT_M0SUB<<8)));
+        CALLBACK(_serial_cb,IPC_SUB);
     }
 }
 #endif
@@ -116,7 +116,7 @@ void M0_M4CORE_IRQHandler(void)
     /* Reception check */
     if (_state[SUBINDEX].buff->m40.rp!=_state[SUBINDEX].buff->m40.wp)
     {
-        CALLBACK(_serial_cb,(SERPORT_EV_DATARX|(SERPORT_M4<<8)));
+        CALLBACK(_serial_cb,IPC_M4);
     }
 }
 #endif
@@ -127,12 +127,9 @@ void M0_M4CORE_IRQHandler(void)
 // ============================================================================================
 // ============================================================================================
 // ============================================================================================
-uint32_t ipcTxt(enum ipc port, uint32_t ticksToWait, uint8_t *d, uint32_t len)
-
-/* Transmit and wait if needed */
+BOOL ipcTxRoomCheck(enum ipc port, uint32_t len)
 
 {
-    uint32_t attemptedLen=len;
     struct buff *b;
 
     ASSERT(port<NUM_IPCS);
@@ -143,39 +140,44 @@ uint32_t ipcTxt(enum ipc port, uint32_t ticksToWait, uint8_t *d, uint32_t len)
     ASSERT(port==IPC_M4);
     b=&(_state[SUBINDEX].buff->m04);
 #endif
+    return ((len<(b->len-((b->wp+b->len-b->rp)%b->len))));
+}
+// ============================================================================================
+BOOL ipcTx(enum ipc port, uint8_t *d, uint32_t len)
 
-    /* If the port currently has space in the queue then we can queue directly */
+/* Transmit entire message or nothing at all */
+
+{
+    struct buff *b;
+
+    ASSERT(port<NUM_IPCS);
+    if (!ipcTxRoomCheck(port,len))
+    {
+        return FALSE;
+    }
+
+#ifdef IAM_M4
+    b=&(_state[port].buff->m40);
+#else
+    ASSERT(port==IPC_M4);
+    b=&(_state[SUBINDEX].buff->m04);
+#endif
 
     while (len)
     {
-        uint32_t n=((b->wp)+1)%b->len; /* This is the next space */
-        if (n==b->rp)
-        {
-            /* We are full, stop queuing */
-            b->buffer[b->wp]='*';
-            break;
-        }
-
-        /* There is space - write this and move along */
+        /* Write this and move along */
         b->buffer[b->wp]=*d++;
         len--;
-        b->wp=n;
+        b->wp=((b->wp)+1)%b->len;
     }
-
-    /* Well, something has been sent, so trigger the other core. Even if it hasn't been */
-    /* sent then triggering the interrupt again is a decent safety feature */
-    __DSB();
-    __SEV();
-
-    return (attemptedLen-len);
+    return TRUE;
 }
 // ============================================================================================
-uint32_t ipcTx(enum ipc port, uint8_t *d, uint8_t len)
-
-/* Transmit without having to worry about the timeout - that's done for you */
+void ipcAlertFarEnd(void)
 
 {
-    return (ipcTxt(port, MILLIS_TO_TICKS(STANDARD_TIMEOUT), d, len));
+    __DSB();
+    __SEV();
 }
 // ============================================================================================
 BOOL ipcOpenPort(enum ipc port)
@@ -219,7 +221,8 @@ uint8_t ipcGetRx(enum ipc port)
         return  0;
     }
 #ifdef IAM_M4
-    r=_state[port].buff->m04.buffer[(_state[port].buff->m04.rp=((_state[port].buff->m04.rp)+1)%_state[port].buff->m04.len)];
+    r=_state[port].buff->m04.buffer[_state[port].buff->m04.rp];
+    _state[port].buff->m04.rp=((_state[port].buff->m04.rp)+1)%_state[port].buff->m04.len;
 #else
     ASSERT(port==IPC_M4);
     r=_state[SUBINDEX].buff->m40.buffer[_state[SUBINDEX].buff->m40.rp];

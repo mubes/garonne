@@ -29,28 +29,19 @@
  * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
  * OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
- * NineD module
- * ============
- *
- * Handle 9D sensor readings
- *
- * LSM9DS1 iNEMO intertial module: 3D accelerometer, 3D gyroscope and 3D magnetometer
- *
- *  WARNING: This module is not in use because the code on the M0 handles these tasks much better.
- *
+ * ipcMsg.h
+ * ========
+ * IPC Exchange message handler.
  */
-#ifndef __NINED_H_
-#define __NINED_H_
 
-/* Axis definitions */
-enum axis {XAXIS,YAXIS,ZAXIS,MAXAXES};
+#ifndef IPCMSG_H_
+#define IPCMSG_H_
+
+#include "config.h"
 
 // ============================================================================================
-void ninedCheckOutput(void);
-int16_t ninedGyr(enum axis xyz);
-int16_t ninedMag(enum axis xyz);
-int16_t ninedAcc(enum axis xyz);
-int16_t ninedTemp(void);
-void ninedInit(void);
+struct MSGpsnandatt *IPCMsgGetpsanandatt(void);
+
+void IPCMsgSetup(void);
 // ============================================================================================
-#endif /* __NINED_H_ */
+#endif /* IPCMSG_H_ */

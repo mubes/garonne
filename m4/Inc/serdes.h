@@ -1,4 +1,4 @@
- /*
+/*
  *                                       ++++++++++++++++++
  *                                  +++++++++++++++++++++++++++++
  *                              +++++++                      +++++++++
@@ -29,19 +29,19 @@
  * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
  * OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
- * ipcHandler.c
- * ============
- * IPC Exchange message handler.
+ * Serialiser & Deserialiser module for M4/M0 comms
+ * ================================================
  */
 
-#ifndef IPCXHANDLER_H_
-#define IPCXHANDLER_H_
-
 #include "config.h"
+#include "ipcHandler.h"
 
 // ============================================================================================
-void IPCXProcessHandler(uint32_t e);
+uint32_t serdesTarget(enum ipc port);
+uint32_t serdesLen(enum ipc port);
+uint8_t *serdesData(enum ipc port);
+void serdesReceive(enum ipc port);
+BOOL serdesSend(uint32_t target, uint8_t len, uint8_t *data);
 
-void IPCXSetup(void);
+void serdesInit(enum ipc port, EVENT_CB(*cb_set));
 // ============================================================================================
-#endif /* IPCXHANDLER_H_ */
