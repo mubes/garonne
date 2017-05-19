@@ -41,7 +41,6 @@
 
 #include "config.h"
 
-#define NUM_OF_RGB_LEDS (8)
 #define RED(x)          ((x&0xff)<<16)
 #define GREEN(x)        ((x&0xff)<<8)
 #define BLUE(x)         (x&0xff)
@@ -51,10 +50,8 @@
 // ==============================================================================================
 BOOL LEDsetColour(uint32_t led, uint32_t colour);       /* Set specific LED to specific colour */
 BOOL LEDclearAll();                                     /* Clear all pending LEDs */
-BOOL LEDPrint(
-    void);                                    /* Request Output current state of LEDs to phy */
-void LEDDoPrint(
-    void);                                  /* Perform output current LED state to phy */
+BOOL LEDPrint(void);                                    /* Request Output current state of LEDs to phy */
+void LEDDoPrint(void);                                  /* Perform output current LED state to phy */
 void LEDInit(void);                                     /* Initialize LED driver*/
 // ============================================================================================
 

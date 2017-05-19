@@ -229,7 +229,7 @@ COMMAND(_info)
 
     serportPrintf (TERMINAL_PORT, "Config %sSaved, ", (ConfigIsSaved () ? "" : "Not "));
 
-    serportPrintf (TERMINAL_PORT, "Vdd=%d.%02dV, Temp=%ddegC" EOL, GIOBattery () / 1000, GIOBattery () % 1000, p->temp / 1000);
+    serportPrintf (TERMINAL_PORT, "Vdd=%d.%03dV, Temp=%ddegC" EOL, GIOBattery () / 1000, GIOBattery () % 1000, p->temp / 1000);
 
     serportPrintf (TERMINAL_PORT, "Ready" EOL);
 
@@ -422,10 +422,14 @@ COMMAND(_setled)
     if (*endptr != 0)
         return UI_ERROR_PARAM_FORMAT;
 
+    GIOSetConnected(TRUE);
     if (!LEDsetColour (l, RED(r) | GREEN(g) | BLUE(b)))
         return UI_COMMAND_FAILED;
     else
+    {
+        LEDPrint();
         return UI_OK;
+    }
 }
 // ============================================================================================
 #ifdef INCLUDE_SDMMC
@@ -509,7 +513,10 @@ COMMAND(_clearleds)
     if (nparams > 1)
         return UI_ERROR_TOO_MANY_PARAMETERS;
 
-    LEDclearAll ();
+    GIOSetConnected(TRUE);
+    LEDclearAll();
+    LEDPrint();
+
     return UI_OK;
 }
 // ============================================================================================

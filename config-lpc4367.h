@@ -128,7 +128,7 @@ enum VLDIST_CHANNEL_ENUM {VLDIST_FRONT, VLDIST_REAR, VLDISTNONE };
 
 // Connection to HLB warning (gio.c)
 // ---------------------------------
-#define CONNECTED_TICKS                 (MILLIS_TO_TICKS(5000))
+#define CONNECTED_TICKS                 (MILLIS_TO_TICKS(10000))
 
 // ----- Motor Control (motor.c)
 // -----------------------------
@@ -176,7 +176,7 @@ enum VLDIST_CHANNEL_ENUM {VLDIST_FRONT, VLDIST_REAR, VLDISTNONE };
 #define DW_SEL                     	GPIOPINDEF(0x06, 1, (SCU_MODE_FUNC0),3, 0)
 #define DW_CLK                     	PINDEF(0x0f, 4, (SCU_MODE_FUNC0))
 #define DW_INT                     	GPIOPINDEF(0x03, 5, (SCU_MODE_FUNC0|SCU_MODE_INBUFF_EN|SCU_MODE_ZIF_DIS|SCU_MODE_PULLDOWN), 1, 15)
-#define DW_RST                          GPIOPINDEF(0x2, 6, (SCU_MODE_FUNC4 | SCU_MODE_INBUFF_EN | SCU_MODE_INACT), 5, 6)
+#define DW_RST                      GPIOPINDEF(0x2, 6, (SCU_MODE_FUNC4 | SCU_MODE_INBUFF_EN | SCU_MODE_INACT), 5, 6)
 
 
 // --- DEBUG LEDS (gio.c)
@@ -197,20 +197,12 @@ enum VLDIST_CHANNEL_ENUM {VLDIST_FRONT, VLDIST_REAR, VLDISTNONE };
 #define SD_RD_ACCESS_LED				(DBG0_LED)
 #define SD_WR_ACCESS_LED				(DBG0_LED)
 
-/*                                              I2C slave addr            R  G  B   */
-#define RGBLED0                         LEDDEF(FRONT_RIGHT_LED_DRIVER_ID, 0, 1, 2)  // front right outside
-#define RGBLED1                         LEDDEF(FRONT_RIGHT_LED_DRIVER_ID, 3, 4, 5)  // front right inside
-#define RGBLED2                         LEDDEF(FRONT_LEFT_LED_DRIVER_ID,  3, 4, 5)  // front left outside
-#define RGBLED3                         LEDDEF(FRONT_LEFT_LED_DRIVER_ID,  0, 1, 2)  // front left inside
-#define RGBLED4                         LEDDEF(BACK_RIGHT_LED_DRIVER_ID,  0, 1, 2)  // back right outside
-#define RGBLED5                         LEDDEF(BACK_RIGHT_LED_DRIVER_ID,  3, 4, 5)  // back right inside
-#define RGBLED6                         LEDDEF(BACK_LEFT_LED_DRIVER_ID,   3, 4, 5)  // back left outside
-#define RGBLED7                         LEDDEF(BACK_LEFT_LED_DRIVER_ID,   0, 1, 2)  // back left inside
+// LED configuration (leds.c)
+// --------------------------
+#define NUM_OF_RGB_LEDS                 (8)
+#define LEDSTRING_DAT                   GPIOPINDEF(0x01, 6, SCU_MODE_FUNC0, 1, 9)
+#define LEDSTRING_CLK                   GPIOPINDEF(0x01, 9, SCU_MODE_FUNC0, 1, 2)
 
-#define FRONT_LEFT_LED_DRIVER_ID        0x28 // U13
-#define FRONT_RIGHT_LED_DRIVER_ID       0x29 // U14  This clashes with the VL Distance sensors, but we move those away
-#define BACK_RIGHT_LED_DRIVER_ID        0x2A // U15
-#define BACK_LEFT_LED_DRIVER_ID         0x2B // U16ß
 // ----- UART configuration (uarthandler.c)
 // ----------------------------------------
 

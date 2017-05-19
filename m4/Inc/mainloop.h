@@ -43,8 +43,6 @@
 #define NOBATTERY (2000)
 #define SENSOR_EVENT(x) (x)
 
-#define ML_PRINT_LEDS   (1)     // Message to i2c update handler to output current LEDs
-
 // ============================================================================================
 void MLInit(void);
 void MLUpdateAvailable(uint32_t primitive);

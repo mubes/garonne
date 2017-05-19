@@ -99,9 +99,6 @@ static portTASK_FUNCTION( _i2cThread, pvParameters )
             xTaskNotifyWait(0, 0xFFFFFFFF, &evSet, MILLIS_TO_TICKS(10));
             nowTicks = xTaskGetTickCount();
 
-            if (evSet & (1 << ML_PRINT_LEDS))
-                LEDDoPrint();
-
 #ifdef VL_DISTANCE
             if ((haveVLSensor) && (nowTicks - lastvl > VL_INTERVAL))
                 {
@@ -195,6 +192,11 @@ static portTASK_FUNCTION( _mainThread, pvParameters )
                     serdesReceive(IPC_SUB);
                 }
             // ---------------------
+            if (evSet & (1 << EVENT_PRINT_LEDS))
+            {
+                LEDDoPrint();
+            }
+
 #ifndef VL_DISTANCE
             if (evSet & (1 << SENSOR_TYPE_US_RANGE))
                 DISTCheckOutput();

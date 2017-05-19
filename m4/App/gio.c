@@ -79,6 +79,7 @@ static struct gioStruct
 
     uint32_t connected;         /* Has a host connected to us since reset? */
     uint32_t chaseLed;          /* Which LED we're currently working with */
+    int32_t dir;                /* Adding or subtracting to chaseled value? */
 
     int16_t temp;               /* Current system temperature */
     uint16_t batLevel;          /* Data from the battery */
@@ -160,28 +161,22 @@ static portTASK_FUNCTION( _gioThread, pvParameters )
             _checkButton();
 
             /* Read ADC value */
-           // ASSERT(Chip_ADC_ReadStatus(BATTERY_ADC_PORT, BATTERY_ADC_CHANNEL, ADC_DR_DONE_STAT)==SET);
+            ASSERT(Chip_ADC_ReadStatus(BATTERY_ADC_PORT, BATTERY_ADC_CHANNEL, ADC_DR_DONE_STAT)==SET);
             Chip_ADC_ReadValue(BATTERY_ADC_PORT, BATTERY_ADC_CHANNEL, &_g.batLevel);
 
-            if (++_g.connected >= (CONNECTED_TICKS / SYNC_FLASH_LENGTH))
+            _g.connected +=DEBOUNCE_TIME;
+            if (_g.connected >= CONNECTED_TICKS)
                 {
-                    _g.chaseLed = !_g.chaseLed;
-                    LEDclearAll();
-                    if (_g.chaseLed % 2)
-                        {
-                            for (uint8_t i = 0; i < NUM_OF_RGB_LEDS; i++)
-                                {
-                                    LEDsetColour(i, BLUE(LED_DEFAULT_PWM));
-                                }
-                        }
-                    else
-                        {
-                            for (uint32_t i = 0; i < NUM_OF_RGB_LEDS; i++)
-                                {
-                                    LEDsetColour(i, GREEN(LED_DEFAULT_PWM));
-                                }
-                        }
-                    LEDDoPrint();
+                    if (_g.chaseLed<10) _g.dir=8;
+                    if (_g.chaseLed>160) _g.dir=-8;
+                    _g.chaseLed+=_g.dir;
+
+                    /* We haven't heard a word from upstairs for a while, so do the lightshow */
+                    for (uint8_t i = 0; i < NUM_OF_RGB_LEDS; i++)
+                    {
+                        LEDsetColour(i, GREEN(_g.chaseLed));
+                    }
+                    LEDPrint();
                 }
 
             _g.hbFlash+=DEBOUNCE_TIME;
@@ -240,8 +235,8 @@ uint32_t GIOTemp(void)
 void GIOSetConnected(BOOL newConnectedVal)
 
 {
-    if ((_g.connected >= (CONNECTED_TICKS / SYNC_FLASH_LENGTH))
-            && (newConnectedVal))
+    _g.chaseLed=0;
+    if ((_g.connected >= CONNECTED_TICKS) && (newConnectedVal))
         {
             /* Have connected, so switch off LEDs */
             LEDclearAll();
@@ -250,7 +245,7 @@ void GIOSetConnected(BOOL newConnectedVal)
     if (newConnectedVal)
         _g.connected = 0;
     else
-        _g.connected = (CONNECTED_TICKS / SYNC_FLASH_LENGTH);
+        _g.connected = CONNECTED_TICKS+1;
 }
 // ============================================================================================
 void GIOdebugLedSet(enum DBG_LED_ENUM led)
@@ -311,7 +306,8 @@ void GIOSetup(void)
     Chip_SCU_PinMuxSet(GETPORT(SMOKE), GETPIN(SMOKE), GETFUNC(SMOKE));
     Chip_GPIO_SetPinDIROutput(LPC_GPIO_PORT, GETGPIOPORT(SMOKE),GETGPIOPIN(SMOKE));
 
-    _g.connected = (CONNECTED_TICKS / SYNC_FLASH_LENGTH);
+    /* Initial state is disconnected, unless someone tells us different */
+    _g.connected = CONNECTED_TICKS+1;
     xTaskCreate(_gioThread, "GIO", 296, NULL,(tskIDLE_PRIORITY + 1UL), (xTaskHandle *) NULL);
 }
 // ============================================================================================

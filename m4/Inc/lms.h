@@ -52,10 +52,11 @@
 #define EVENT_SERIAL2                   (SERPORT_UART2) /* == 2 */
 #define EVENT_SERIAL3                   (SERPORT_UART3) /* == 3 */
 #define EVENT_USB0                      (SERPORT_USB)   /* == 4 */
-#define EVENT_USERBUTTON                (5)
-#define EVENT_REQSETDONE                (6)
-#define EVENT_M0APP                     (7)
-#define EVENT_M0SUB                     (8)
+#define EVENT_USERBUTTON                (5)             // User button state change
+#define EVENT_REQSETDONE                (6)             // Complete Request Set for position arrived
+#define EVENT_M0APP                     (7)             // M0APP wants attention
+#define EVENT_M0SUB                     (8)             // M0SUB wants attention
+#define EVENT_PRINT_LEDS                (9)             // Update the LEDs
 
 #define SENSOR_TYPE_US_RANGE            (10)
 #define SENSOR_TYPE_CAR_STATUS          (11)

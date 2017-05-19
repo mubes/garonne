@@ -182,17 +182,6 @@ typedef uint32_t BOOL;
 #define SCT_PINDEF(port, pin, iocon, ctout) ((port&0xFF) | ((pin&0xFF)<<8) | ((iocon&0xFFFF)<<16) | ((ctout&0xFF)<<24))
 #define GETCTOUT(x)         ((x>>24) & 0xFF)
 
-// --- Encode leds a bit more compact
-// ----------------------------------
-#define LEDDEF(driver_id,r,g,b) ( ((driver_id&0x7F)<<24) | ((r&0xFF)<<16) | ((g&0xFF)<<8) | (b&0xFF))
-#define LED_GET_DRIVER_ID(x) ((x>>24)&0x7f)
-
-#define LED_WAS_UPDATED(x) (((x)&(1<<31))!=0)
-#define LED_UPDATED(x,y) if (y) (x)|=(1<<31); else (x)&=~(1<<31);
-#define GET_R(x) ((x>>16)&0xff)
-#define GET_G(x) ((x>>8)&0xff)
-#define GET_B(x) (x&0xff)
-
 // --- a few FreeRTOS helpers
 // --------------------------
 #define TICKS_TO_MILLIS(ticks) ((ticks) * portTICK_RATE_MS)
