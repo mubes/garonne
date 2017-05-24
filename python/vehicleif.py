@@ -11,6 +11,23 @@
 #   ++++ ++++ ########## ###      ########## ###    ### ###    ### ++++    +++++
 #    +++++++   ###### ## ###       ########  ###     ## ##     ###  ++++++++++
 #
+# Copyright 2017 Technolution BV  opensource@technolution.eu
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+# associated documentation files (the "Software"), to deal in the Software without restriction,
+# including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
+# subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all copies or substantial
+# portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
+# LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+# IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+# WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
+# OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#
 # Vehicle Interface Module
 # ========================
 #
@@ -45,7 +62,7 @@ class Vehicle:
     SENSOR_TYPE_CAR_DRIVE_VECTOR=12
     SENSOR_TYPE_RANGE_SCANNER=13
     SENSOR_TYPE_WHEEL_ENCODER=14
-    SENSOR_TYPE_TURRET_DATA=15
+#    SENSOR_TYPE_TURRET_DATA=15 Removed from code and available for re-use
     SENSOR_TYPE_9D_SENSOR=16
     SENSOR_TYPE_BATTERY_STATUS=17
     SENSOR_TYPE_REV_TICKS=18
@@ -101,15 +118,6 @@ class Vehicle:
             self.updated.add("EStop")
             self.updated.add("steer")
             self.updated.add("motor")
-            return
-
-        if (sensorType==Vehicle.SENSOR_TYPE_TURRET_DATA):
-            self.vehicleState.setdefault("Turret",{}).update({sensorID:{"count":int.from_bytes(self.packet[0:4],byteorder='big'),
-                                                   "value":int.from_bytes(self.packet[4:8],byteorder='big'),
-                                                   "min":int.from_bytes(self.packet[8:12],byteorder='big'),
-                                                   "max":int.from_bytes(self.packet[12:16],byteorder='big'),
-                                                   "ts":timestamp}})
-            self.updated.add("Turret")
             return
 
         if (sensorType==Vehicle.SENSOR_TYPE_WHEEL_ENCODER):
@@ -273,11 +281,7 @@ class Vehicle:
         l=[]
 
         for led in ledList:
-            # Deal with special case of 31n1 which has the leds in the wrong order 
-            if (self.config["icarus31n1"]):
-                l.extend([(3,4,0,1,0)[led[0]],led[1],led[2],led[3]])
-            else:
-                l.extend([led[0],led[1],led[2],led[3]])
+            l.extend([led[0],led[1],led[2],led[3]])
         self._sendCmd(Vehicle.CMD_TYPE_SETLED,command,l)
 
     def mgmtEnterFlashMode(self):

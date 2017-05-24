@@ -12,6 +12,23 @@
 #   ++++ ++++ ########## ###      ########## ###    ### ###    ### ++++    +++++
 #    +++++++   ###### ## ###       ########  ###     ## ##     ###  ++++++++++
 #
+# Copyright 2017 Technolution BV  opensource@technolution.eu
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+# associated documentation files (the "Software"), to deal in the Software without restriction,
+# including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
+# subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all copies or substantial
+# portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
+# LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+# IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+# WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
+# OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#
 # Vehicle to Outside World Module
 # ===============================
 #
@@ -32,7 +49,6 @@ config={"verbose":False,
         "servport":6282,
         "commport":"/dev/ttyAMA0",
         "speed":115200,
-        "icarus31n1":False,
         "d":None}
 
 # Types of lights that are supported
@@ -50,11 +66,14 @@ flashtable={
     }
 
 # Entries further down this list override ones further up
-light={"headlights":([6,80,0,0],[4,0,0,80],[0,80,80,80],[2,80,80,80]),
-       "highbeam":([6,80,0,0],[4,0,0,80],[0,255,255,255],[2,255,255,255]),
-        "brakes":( [6,255,0,0],[4,0,0,255]),
-        "indr":( [1,255,32,0],[5,0,32,255]),
-        "indl":( [3,255,32,0],[7,255,32,0])
+light={"headlights":([0,40,0,0],[1,40,0,0],[2,40,0,0],[3,40,0,0],
+                     [4,40,40,40], [5,40,40,40],[6,40,40,40], [7,40,40,40]),
+       "highbeam": ([4,240,240,240], [5,240,240,240],[6,240,240,240], [7,240,240,240]),
+        "brakes":( [0,255,0,0],[1,255,0,0],[2,255,0,0],[3,255,0,0]),
+        "indr":( [3,255,32,0],[4,255,32,0]),
+        "indroff":( [3,0,0,0],[4,0,0,0]),
+        "indl":( [0,255,32,0],[7,255,32,0]),
+        "indloff":( [0,0,0,0],[7,0,0,0])
         }
 
 # -----------------------------------------------------------------------------
@@ -107,8 +126,11 @@ def runloop(stdscr):
 
     # Main loop - just sit on a select call and dispatch in response
     lastUpdate=time.time()
+    flashStart=time.time()
     lightUpdate=0
-    
+    v.ledClear()
+    v.ledPrint()
+
     while (1):
         avail_read,avail_write,avail_error=select.select([v,s],[],[],0.05)
 
@@ -127,18 +149,6 @@ def runloop(stdscr):
             if (recvString):
                 try:
                     ctrlstatepend=json.loads(recvString.decode("utf-8"))
-#                    if (ctrlstatepend["sn"]<(ctrlstate["sn"])):
-#                        mismatched+=1
-#                        if (config["verbose"]):
-#                          config["d"].addLog("Mismatched seqno: Incoming="+str(ctrlstatepend["sn"])+" Held="+str(ctrlstate["sn"]))
-#                        if (mismatched<20):
-#                            continue
-#                            
-#                        if (config["verbose"]):
-#                            config["d"].addLog("Sequence number reset")
-#                    else:
-#                        mismatched=0
-
                     if (ctrlstate["steer"]!=ctrlstatepend["steer"]):
                         v.setServo(0,ctrlstatepend["steer"])
 
@@ -157,23 +167,25 @@ def runloop(stdscr):
 
         # Update any light settings that need attention
         if ((time.time()-lightUpdate>=0.1) and ("lights" in ctrlstate)):
-            v.ledClear()
             if (ctrlstate["lights"]&HEADLIGHTS):
                 v.ledSet(light["headlights"])
             if (ctrlstate["lights"]&HIGHBEAM):
                 v.ledSet(light["highbeam"])
             if (ctrlstate["lights"]&BRAKES):
                 v.ledSet(light["brakes"])
-            if ((ctrlstate["lights"]&INDL) and
-                ((time.time()%(flashtable["indl"][0]+flashtable["indl"][1]))<=flashtable["indl"][0])):
-                v.ledSet(light["indl"])                        
-            if ((ctrlstate["lights"]&INDR) and
-                ((time.time()%(flashtable["indr"][0]+flashtable["indr"][1]))<=flashtable["indr"][0])): 
-                v.ledSet(light["indr"])
+            if (ctrlstate["lights"]&INDL):
+                if ((time.time()%(flashtable["indl"][0]+flashtable["indl"][1]))<=flashtable["indl"][0]):
+                    v.ledSet(light["indl"])
+                else:
+                    v.ledSet(light["indloff"])
+            if (ctrlstate["lights"]&INDR):
+                if ((time.time()%(flashtable["indr"][0]+flashtable["indr"][1]))<=flashtable["indr"][0]):
+                    v.ledSet(light["indr"])
+                else:
+                    v.ledSet(light["indroff"])
             v.ledPrint()
             lightUpdate=time.time()
-            
-            
+                    
         if ((config["verbose"]) and (time.time()-lastUpdate>0.1)):
             config["d"].doUpdate(v.getState(),ctrlstate)
             lastUpdate=time.time()

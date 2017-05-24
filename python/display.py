@@ -146,13 +146,6 @@ class Display:
                 self.screen.addstr(5+i,46,str(t["9d"]["gyr"][i]),curses.color_pair(self.COL_REVS))
                 self.screen.addstr(5+i,70,str(t["9d"]["mag"][i]),curses.color_pair(self.COL_REVS))
 
-        # Turrets  ====================================================
-        for i in range(0,8):
-            self.screen.addstr(9,7+9*i,str(i),curses.color_pair(self.COL_0+i))
-            if (("Turret" in t) and (i in t["Turret"]) and (t["timestamp"]-t["Turret"][i]["ts"]<2000)):
-                self.screen.addstr(10,5+9*i,str(t["Turret"][i]["value"])+"/"+str(t["Turret"][i]["count"])+"   ",curses.color_pair(self.COL_0+i))
-            else:
-                self.screen.addstr(10,5+9*i,"--/--",curses.color_pair(self.COL_0+i))
         # Steer Angle =====================================================
         self.screen.addstr(12,1,"|1000|"+"."*(int(self.SX/2)-8)+"|500|"+"."*(int(self.SX/2)-8)+"|0|",curses.color_pair(self.COL_NORM))
         if ("steer" in t):
