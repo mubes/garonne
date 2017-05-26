@@ -61,6 +61,7 @@ static struct
 void LEDDoPrint(void)
 
 {
+    taskENTER_CRITICAL();
     for (uint32_t led=0; led<NUM_OF_RGB_LEDS; led++)
         {
             uint32_t bits=24;
@@ -75,6 +76,7 @@ void LEDDoPrint(void)
                Chip_GPIO_WritePortBit(LPC_GPIO_PORT, GETGPIOPORT(LEDSTRING_CLK), GETGPIOPIN(LEDSTRING_CLK), TRUE);
             }
         }
+    taskEXIT_CRITICAL();
 }
 // ============================================================================================
 BOOL LEDsetColour(uint32_t led, uint32_t colour)

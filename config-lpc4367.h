@@ -230,7 +230,7 @@ enum VLDIST_CHANNEL_ENUM {VLDIST_FRONT, VLDIST_REAR, VLDISTNONE };
 // ---- Serial port that is used for HLB communication (lmsmsg.c)
 // --------------------------------------------------------------
 #define LLB_IF_PORT                     SERPORT_UART1
-#define LLB_IF_BAUDRATE                 (115200)
+#define LLB_IF_BAUDRATE                 (230400)
 
 // ---- Serial port that is used for the debug & interactive terminal (ui.c)
 // -------------------------------------------------------------------------
