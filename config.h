@@ -273,6 +273,7 @@ typedef struct
 	 }
 
 extern ConfigType ConfigStore;
+extern ConfigType *ConfigStorePtr;
 extern BOOL wasDefaulted;
 extern BOOL isSaved;
 
@@ -281,33 +282,35 @@ ALWAYS_INLINE struct calibFrame *ConfigGetCalibFrame(enum CalibFrameInstance i)
 {
   if (i>=CF_Max)
     return NULL;
-  return &ConfigStore.c[i];
+  return &(ConfigStorePtr->c[i]);
 }
 ALWAYS_INLINE BOOL ConfigWasDefaulted(void) { return wasDefaulted; }
 ALWAYS_INLINE BOOL ConfigIsSaved(void) { return isSaved; }
-ALWAYS_INLINE uint32_t ConfigVersionNumber(void) { return ConfigStore.versionNumber; }
-ALWAYS_INLINE uint32_t ConfigSupplyV(void) { return ConfigStore.supplyV; }
-ALWAYS_INLINE uint32_t ConfigDistcheckInterval(void) { return ConfigStore.distcheckInterval; }
+ALWAYS_INLINE uint32_t ConfigVersionNumber(void) { return ConfigStorePtr->versionNumber; }
+ALWAYS_INLINE uint32_t ConfigSupplyV(void) { return ConfigStorePtr->supplyV; }
+ALWAYS_INLINE uint32_t ConfigDistcheckInterval(void) { return ConfigStorePtr->distcheckInterval; }
 
-ALWAYS_INLINE uint32_t ConfigID(void) { return ConfigStore.id; }
-ALWAYS_INLINE uint32_t ConfigLocx(void) { return ConfigStore.x; }
-ALWAYS_INLINE uint32_t ConfigLocy(void) { return ConfigStore.y; }
-ALWAYS_INLINE uint32_t ConfigLocz(void) { return ConfigStore.z; }
-ALWAYS_INLINE BOOL ConfigNomadic(void) { return ConfigStore.isNomadic; }
+ALWAYS_INLINE uint32_t ConfigID(void) { return ConfigStorePtr->id; }
+ALWAYS_INLINE uint32_t ConfigLocx(void) { return ConfigStorePtr->x; }
+ALWAYS_INLINE uint32_t ConfigLocy(void) { return ConfigStorePtr->y; }
+ALWAYS_INLINE uint32_t ConfigLocz(void) { return ConfigStorePtr->z; }
+ALWAYS_INLINE BOOL ConfigNomadic(void) { return ConfigStorePtr->isNomadic; }
 
 
 ALWAYS_INLINE BOOL ConfigSetdistcheckInterval(BOOL distcheckSet)
 {
     isSaved = FALSE;
-    ConfigStore.distcheckInterval = distcheckSet;
+    ConfigStorePtr->distcheckInterval = distcheckSet;
     return TRUE;
 }
 
+/* Only allow configuration to be saved by the M4 */
+#ifdef IAM_M4
 ALWAYS_INLINE BOOL ConfigSetID(uint32_t idSet)
 
 {
     isSaved = FALSE;
-    ConfigStore.id = idSet;
+    ConfigStorePtr->id = idSet;
     return TRUE;
 }
 
@@ -317,12 +320,12 @@ ALWAYS_INLINE BOOL ConfigSetCalibFrame(enum CalibFrameInstance i, int16_t ox, in
     if (i>=CF_Max)
         return FALSE;
 
-    ConfigStore.c[i].ofs[0]=ox;
-    ConfigStore.c[i].ofs[1]=oy;
-    ConfigStore.c[i].ofs[2]=oz;
-    ConfigStore.c[i].scale[0]=sx;
-    ConfigStore.c[i].scale[1]=sy;
-    ConfigStore.c[i].scale[2]=sz;
+    ConfigStorePtr->c[i].ofs[0]=ox;
+    ConfigStorePtr->c[i].ofs[1]=oy;
+    ConfigStorePtr->c[i].ofs[2]=oz;
+    ConfigStorePtr->c[i].scale[0]=sx;
+    ConfigStorePtr->c[i].scale[1]=sy;
+    ConfigStorePtr->c[i].scale[2]=sz;
     isSaved=FALSE;
     return TRUE;
 }
@@ -330,19 +333,19 @@ ALWAYS_INLINE BOOL ConfigSetCalibFrame(enum CalibFrameInstance i, int16_t ox, in
 ALWAYS_INLINE BOOL ConfigSetNomadic(BOOL NomadicSet)
 {
     isSaved = FALSE;
-    ConfigStore.isNomadic = NomadicSet;
+    ConfigStorePtr->isNomadic = NomadicSet;
     return TRUE;
 }
 
 ALWAYS_INLINE BOOL ConfigSetSupplyV(uint32_t SupplyVSet)
 {
     isSaved = FALSE;
-    ConfigStore.supplyV = SupplyVSet;
+    ConfigStorePtr->supplyV = SupplyVSet;
     return TRUE;
 }
 
-ALWAYS_INLINE BOOL ConfigSetLocation(uint32_t xSet, uint32_t ySet) { ConfigStore.x=xSet; ConfigStore.y=ySet; return TRUE; }
-
+ALWAYS_INLINE BOOL ConfigSetLocation(uint32_t xSet, uint32_t ySet) { ConfigStorePtr->x=xSet; ConfigStorePtr->y=ySet; return TRUE; }
+#endif
 
 
 void ConfigAssertDA(char *msg, char *file, uint32_t line);

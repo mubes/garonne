@@ -163,4 +163,10 @@ BOOL LmsRxDistance(uint16_t distance, uint16_t ToObject, uint16_t x, uint16_t y,
     return FALSE;
 }
 // ============================================================================================
+BOOL LmsRxPQ(int16_t x, int16_t y, int16_t z, int16_t q0, int16_t q1, int16_t q2, int16_t q3, uint32_t tsP, uint32_t tsQ)
+
+{
+	return FALSE;
+}
+// ============================================================================================
 

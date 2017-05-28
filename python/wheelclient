@@ -71,7 +71,7 @@ class Controller:
 
     # Different vehice types and their characteristics
     characteristics=[
-        { "name":"Sponge", "gain": 1.1, "deadzone": 0.3, "autocenter": 0x0 },
+        { "name":"Sponge", "gain": 1, "deadzone": 0, "autocenter": 0x0 },
         { "name":"Truck", "gain": 2, "deadzone": 0.2, "autocenter": 0x5000 },
         { "name":"Saloon", "gain": 3, "deadzone": 0.1, "autocenter": 0x8000 },
         { "name":"goKart", "gain": 10, "deadzone": 0.0, "autocenter" :0xFFFF }
@@ -145,8 +145,8 @@ class Controller:
         { "name" : "Microsoft X-Box 360 pad",
           "hasff" : False,
           "reports": (
-              {"name":"accel" , "code" : 1  , "type" : 3, "vartype" : 4, "midpoint":0, "range" : 32767},
-              {"name":"wheel" , "code" : 3  , "type" : 3, "vartype" : 4, "midpoint":0, "range" : 32767},
+              {"name":"accel" , "code" : 1  , "type" : 3, "vartype" : 0, "range" : 32767},
+              {"name":"wheel" , "code" : 3  , "type" : 3, "vartype" : 0, "range" : 65535},
               {"name":"ind"   , "code" : 16 , "type" : 3, "vartype" : 0, "range" : 1},
               {"name":"beam"  , "code" : 17 , "type" : 3, "vartype" : 0, "range" : 1} 
           )
@@ -224,26 +224,18 @@ class Controller:
                     if (o["vartype"]==2):
                         # Scaled and zeroed variable (for steering)
                         p=(event.value/o["range"])-0.5 # Normalise and center around zero                        
-                        if (abs(p-0.5)<(self.characteristics[self.currentC]["deadzone"]/2)): # In the deadzone, to make it central
+                        if (abs(p)<(self.characteristics[self.currentC]["deadzone"]/2)): # In the deadzone, to make it central
                             p=0.5
                         else:
                             # In the active zone, with gain
-                            p=(0.5+math.copysign((abs(p-0.5)-(self.characteristics[self.currentC]["deadzone"]/2)),p-0.5)*self.characteristics[self.currentC]["gain"])
+                            p=0.5+math.copysign((abs(p)-self.characteristics[self.currentC]["deadzone"]/2)*self.characteristics[self.currentC]["gain"],p)  
                         self.input[o["name"]] = 0 if p<0 else 1 if p>1 else p  # Make sure gain doesn't take value out of range
+
                     if (o["vartype"]==3):
                         # Management variable
                         if ((event.code==o["code"]) and (event.type==o["type"]) and (event.value==o["value"])):
                             self._managementEvent(o["name"])
 
-                    if (o["vartype"]==4):
-                        # Scaled and zeroed variable with set midpoint
-                        p=((event.value-o["midpoint"])/o["range"])+0.5 # Normalise and center around zero                        
-                        if (abs(p-0.5)<(self.characteristics[self.currentC]["deadzone"]/2)): # In the deadzone, to make it central
-                            p=0.5
-                        else:
-                            # In the active zone, with gain
-                            p=(0.5+math.copysign((abs(p-0.5)-(self.characteristics[self.currentC]["deadzone"]/2)),p-0.5)*self.characteristics[self.currentC]["gain"])
-                        self.input[o["name"]] = 0 if p<0 else 1 if p>1 else p  # Make sure gain doesn't take value out of range
             # If you want to add a controller input, just uncomment the line below to see what event it generates
             #print(event)
             
@@ -338,7 +330,7 @@ class Actuator:
     MAXLIGHTS=(HEADLIGHTS|BRAKES|INDL|INDR|HIGHBEAM)
     
     opvars={
-        "motor"   : { "min":100, "max":-100, "def": 0 },
+        "motor"   : { "min":-100, "max":100, "def": 0 },
         "steer"   : { "min":1000,   "max":0, "def":500 },
         "lights"  : { "min":0, "max":MAXLIGHTS, "def":HEADLIGHTS },
         "sn"      : { "min":0,   "max":0,    "def":0 }
@@ -357,7 +349,7 @@ class Actuator:
         self.network.send(json.dumps(self.state).encode())
 
     def motor(self,v):
-        self.state["motor"]=int(((self.opvars["motor"]["max"]-self.opvars["motor"]["min"])*v)+self.opvars["motor"]["min"])
+        self.state["motor"]=self.opvars["motor"]["min"]+int((self.opvars["motor"]["max"]-self.opvars["motor"]["min"])*v)
 
     def steer(self,s):
         self.state["steer"]=self.opvars["steer"]["min"]+int((self.opvars["steer"]["max"]-self.opvars["steer"]["min"])*s)
@@ -379,7 +371,7 @@ class Actuator:
             self.state["lights"]|=Actuator.HEADLIGHTS
         else:
             self.state["lights"]&=~Actuator.HEADLIGHTS
-            
+
     def highbeam(self,isOn):
         if (isOn):
             self.state["lights"]|=Actuator.HIGHBEAM
@@ -418,8 +410,8 @@ class Processor:
 
         # ...now commit them to the actuators
         if ((self.pendingState["acc"]!=self.state["acc"]) or (self.pendingState["brk"]!=self.state["brk"])):
-            v.motor(self.pendingState["acc"])
-            if (self.pendingState["acc"]<-10):
+            v.motor((1-self.pendingState["acc"]+self.pendingState["brk"])/2)
+            if (((1-self.pendingState["acc"]+self.pendingState["brk"])/2)<0.45):
                 v.brake(True)
             else:
                 v.brake(False)

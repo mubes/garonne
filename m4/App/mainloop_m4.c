@@ -68,6 +68,8 @@
 #define REVS_ENC_TX_INTERVAL    (MILLIS_TO_TICKS(100))
 #define VEHICLE_STATUS_INTERVAL (MILLIS_TO_TICKS(50))
 #define VL_INTERVAL             (MILLIS_TO_TICKS(100))
+#define PSNQ_TX_INTERNVAL		(MILLIS_TO_TICKS(50))
+#define NINEDENC_INTERVAL		(MILLIS_TO_TICKS(105))
 
 struct MLStruct
 {
@@ -126,6 +128,8 @@ static portTASK_FUNCTION( _mainThread, pvParameters )
     uint32_t lastRevsEnc = 0; /* Last time revs were sent */
     uint32_t lastStatusEnc = 0; /* Last time vehicle status was sent */
     uint32_t lastBatteryEnc = 0; /* Last time battery status was sent */
+    uint32_t lastPsnQ = 0; /* Last time position and quaternion was sent */
+    uint32_t last9DEnc = 0; /* Last time 9D was sent */
     uint32_t nowTicks;
 
     uint32_t evSet; /* Events that have been set */
@@ -230,7 +234,22 @@ static portTASK_FUNCTION( _mainThread, pvParameters )
                     lastRevsEnc = nowTicks;
                 }
             // ---------------------
+            if (nowTicks - last9DEnc > NINEDENC_INTERVAL)
+            	{
+            		struct MSG9d *m=IPCMsgGet9d();
+
+					LmsSend9DData(m->acc,m->gyr,m->mag);
+            		last9DEnc = nowTicks;
+            	}
+            // ---------------------
+            if (nowTicks - lastPsnQ > PSNQ_TX_INTERNVAL)
+            	{
+            		struct MSGpsnandatt *m = IPCMsgGetpsanandatt();
+            		LmsSendPosandQ(m->psn,m->q,m->tsPsn,m->tsQ);
+            		lastPsnQ = nowTicks;
+            	}
         }
+
 }
 // ============================================================================================
 // ============================================================================================

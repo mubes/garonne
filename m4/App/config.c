@@ -53,7 +53,8 @@
 
 #define ITM_CONSOLE                     /* Send debug output to ITM Channel (or Terminal, otherwise) */
 
-ConfigType ConfigStore;                 /* Current configuration (may not be the same as the saved version! */
+ConfigType ConfigStore __attribute__((section (".m0m4")));  /* Current configuration (may not be the same as the saved version! */
+ConfigType *ConfigStorePtr = &ConfigStore;  /* Pointer to the configuration store */
 BOOL wasDefaulted;                      /* Indication of if this load was a defaulting load */
 BOOL isSaved;                           /* Indication of if the current configuration has been saved */
 static uint32_t chipSerialNumber[4];    /* Storage for chip serial number */

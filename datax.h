@@ -71,9 +71,11 @@
 #define MSG_ENC_PONG                (MSG(MSG_PONG)|MSG_DIR(ANY_TO_ANY)|MSG_CLASS(MSG_CLASS_MANAGEMENT))
 
 #define MSG_STRING                  1
-#define MSG_PSNANDATT               2
 #define MSG_ENC_STRING              (MSG(MSG_STRING)|MSG_DIR(ANY_TO_ANY)|MSG_CLASS(MSG_CLASS_DATA))
+#define MSG_PSNANDATT               2
 #define MSG_ENC_PSNANDATT           (MSG(MSG_PSNANDATT)|MSG_DIR(M0APP_TO_M4)|MSG_CLASS(MSG_CLASS_DATA))
+#define MSG_9D		                3
+#define MSG_ENC_9D           		(MSG(MSG_9D)|MSG_DIR(M0APP_TO_M4)|MSG_CLASS(MSG_CLASS_DATA))
 
 struct MSGpsnandatt
 
@@ -83,6 +85,14 @@ struct MSGpsnandatt
   int16_t temp;
   uint32_t tsPsn;
   uint32_t tsQ;
+};
+
+struct MSG9d
+
+{
+	int16_t acc[3];
+	int16_t gyr[3];
+	int16_t mag[3];
 };
 // ============================================================================================
 #endif

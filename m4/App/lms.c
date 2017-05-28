@@ -244,6 +244,23 @@ BOOL _decodeSENSOR_TYPE_DISTANCE(uint8_t sensorID,uint8_t *pkt)
                          int8to16(pkt+8));
 }
 // ============================================================================================
+BOOL LmsSendPosandQ(int16_t *p, int16_t *q, uint32_t tsP, uint32_t tsQ)
+
+{
+    uint8_t b[] = { HEADER(SENSOR_TYPE_PQ, 0), INT16TO8(p[0]),INT16TO8(p[1]),INT16TO8(p[2]),
+    								INT16TO8(q[0]),INT16TO8(q[1]),INT16TO8(q[2]),INT16TO8(q[3]),
+									INT32TO8(tsP), INT32TO8(tsQ),FOOTER };
+    return LmsMsgTx(b, sizeof(b));
+}
+
+BOOL _decodeSENSOR_TYPE_PQ(uint8_t sensorID,uint8_t *pkt)
+
+{
+    return LmsRxPQ(int8to16(pkt),int8to16(pkt+2), int8to16(pkt+4),
+				   int8to16(pkt+6),int8to16(pkt+8),int8to16(pkt+10),int8to16(pkt+12),
+				   int8to32(pkt+14),int8to32(pkt+18));
+}
+// ============================================================================================
 BOOL LmsSendUserbutton(BOOL isSet)
 
 {
@@ -317,6 +334,9 @@ BOOL LmsDecode(uint8_t len, uint8_t *pkt)
 
             case SENSOR_TYPE_USERBUTTON:
                 return _decodeSENSOR_TYPE_USERBUTTON(sensorID, pkt);
+
+            case SENSOR_TYPE_PQ:
+            	return _decodeSENSOR_TYPE_PQ(sensorID, pkt);
 
             // -------------------------------------------------
             // -------------------------------------------------

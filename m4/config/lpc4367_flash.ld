@@ -137,7 +137,14 @@ SECTIONS
     {
 	INCLUDE ../bindist/llb_v2_m0app.ld
     } > Flash_01
+
+    /* Make sure this is the first thing into the RamLoc32 */
+    .sharedM0aM4 : ALIGN(4)
+    {
+	*(.m0m4)
+    } > RamLoc32
     
+
     /* DATA section for RamLoc40 */
     .data_RAM2 : ALIGN(4)
     {

@@ -48,6 +48,7 @@
 
 // ============================================================================================
 static struct MSGpsnandatt p;     /* Position and Attitude from the M0 */
+static struct MSG9d m;  		  /* 9D readings from M0 */
 // ============================================================================================
 EVENT_CB(_ipcDispatch)
 
@@ -83,6 +84,14 @@ EVENT_CB(_ipcDispatch)
                 return;
             }
             // ------
+            if (MSG_GET_MSG(target)==MSG_9D)
+            {
+                /* Copy the updated data into the receive buffer */
+                ASSERT(serdesLen(IPC_APP)==sizeof(m));
+                memcpy(&m,serdesData(IPC_APP),sizeof(m));
+                return;
+            }
+            // ------
             DBG("Unhandled Data Message" EOL);
             // ======================================================
         case MSG_CLASS_ACTION:
@@ -102,6 +111,12 @@ struct MSGpsnandatt *IPCMsgGetpsanandatt(void)
 
 {
     return &p;
+}
+// ============================================================================================
+struct MSG9d *IPCMsgGet9d(void)
+
+{
+	return &m;
 }
 // ============================================================================================
 void IPCMsgSetup(void)

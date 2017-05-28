@@ -64,6 +64,7 @@
 #define SENSOR_TYPE_RANGE_SCANNER       (13)
 #define SENSOR_TYPE_WHEEL_ENCODER       (14)
 //#define SENSOR_TYPE_TURRET_DATA         (15) // OBSOLETE - CODE REMOVED. Can be reused.
+#define SENSOR_TYPE_PQ					(15)
 #define SENSOR_TYPE_9D_SENSOR           (16)
 #define SENSOR_TYPE_BATTERY_STATUS      (17)
 #define SENSOR_TYPE_REV_TICKS           (18)
@@ -99,6 +100,7 @@ BOOL LmsSendCarStatus(BOOL emergencyStopFront,BOOL emergencyStopBack,uint32_t se
                       int32_t motorSpeed);
 BOOL LmsSendDistance(uint32_t distance, uint32_t ToObject, int32_t x, int32_t y, int32_t z);
 BOOL LmsSendUserbutton(BOOL isSet);
+BOOL LmsSendPosandQ(int16_t *p, int16_t *q, uint32_t tsP, uint32_t tsQ);
 
 /* DOWNLINK - From HLB to Vehicle */
 BOOL LmsSendSetSpeed(int32_t speed);
