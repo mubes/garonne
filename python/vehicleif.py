@@ -62,7 +62,7 @@ class Vehicle:
     SENSOR_TYPE_CAR_DRIVE_VECTOR=12
     SENSOR_TYPE_RANGE_SCANNER=13
     SENSOR_TYPE_WHEEL_ENCODER=14
-#    SENSOR_TYPE_TURRET_DATA=15 Removed from code and available for re-use
+    SENSOR_TYPE_PQ=15
     SENSOR_TYPE_9D_SENSOR=16
     SENSOR_TYPE_BATTERY_STATUS=17
     SENSOR_TYPE_REV_TICKS=18
@@ -119,6 +119,10 @@ class Vehicle:
             self.updated.add("steer")
             self.updated.add("motor")
             return
+
+        if (sensorType==Vehicle.SENSOR_TYPE_PQ):
+            self.vehicleState["Psn"]={"X":int.from_bytes(self.packet[0:2]),"Y":int.from_bytes(self.packet[2:2]),"Z":int.from_bytes(self.packet[4:2]),"Lu":int.from_bytes(self.packet[14:4])}
+            self.vehicleState["Quat"]={"Q0":int.from_bytes(self.packet[6:2]),"Q1":int.from_bytes(self.packet[8:2]),"Q2":int.from_bytes(self.packet[10:2]),"Q3":int.from_bytes(self.packet[12:2]),"LU":int.from_bytes(self.packet[18:4])}
 
         if (sensorType==Vehicle.SENSOR_TYPE_WHEEL_ENCODER):
             self.vehicleState.setdefault("steer",{}).update({sensorID:{"ticks":int.from_bytes(self.packet[0:4],byteorder='big',signed=True),

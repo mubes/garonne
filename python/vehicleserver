@@ -47,8 +47,8 @@ from display import Display
 config={"verbose":False,
         "servaddr":"0.0.0.0",
         "servport":6282,
-        "commport":"/dev/ttyAMA0",
-        "speed":115200,
+        "commport":"/dev/serial0",
+        "speed":230400,
         "d":None}
 
 # Types of lights that are supported
