@@ -83,6 +83,9 @@ class Vehicle:
     # Specific Management commands
     MGMT_CMD_FLASHUPDATE=0
 
+    # Indicator of invalid location
+    NOLOCATION=-1
+    
     SIGNATURE=bytearray([0x53,0xce,0x1b,0x11,0xdd,0x8f,0x47,0x94,0xbf,0x1c,0xb0,0x62,0x64,0x71,0x4e,0xa1])
     HEADER=bytearray([0x7e,0x8e,VERSION]) # Magic number followed by version
 
@@ -121,9 +124,24 @@ class Vehicle:
             return
 
         if (sensorType==Vehicle.SENSOR_TYPE_PQ):
-            self.vehicleState["Psn"]={"X":int.from_bytes(self.packet[0:2]),"Y":int.from_bytes(self.packet[2:2]),"Z":int.from_bytes(self.packet[4:2]),"Lu":int.from_bytes(self.packet[14:4])}
-            self.vehicleState["Quat"]={"Q0":int.from_bytes(self.packet[6:2]),"Q1":int.from_bytes(self.packet[8:2]),"Q2":int.from_bytes(self.packet[10:2]),"Q3":int.from_bytes(self.packet[12:2]),"LU":int.from_bytes(self.packet[18:4])}
+            self.vehicleState["Psn"]={"l":[int.from_bytes(self.packet[0:2],byteorder='big',signed=True),
+                                           int.from_bytes(self.packet[2:4],byteorder='big',signed=True),
+                                           int.from_bytes(self.packet[4:6],byteorder='big',signed=True)],
+                                      "lu":int.from_bytes(self.packet[14:18],byteorder='big')}
 
+            # Check for invalid location
+            if ((self.vehicleState["Psn"]["l"][0]==self.NOLOCATION) and
+                (self.vehicleState["Psn"]["l"][1]==self.NOLOCATION) and
+                (self.vehicleState["Psn"]["l"][2]==self.NOLOCATION)):
+                self.vehicleState["Psn"]["l"]=None
+                
+            self.vehicleState["Quat"]={"q":[int.from_bytes(self.packet[6:8],byteorder='big',signed=True),
+                                            int.from_bytes(self.packet[8:10],byteorder='big',signed=True),
+                                            int.from_bytes(self.packet[10:12],byteorder='big',signed=True),
+                                            int.from_bytes(self.packet[12:14],byteorder='big',signed=True)],
+                                       "lu":int.from_bytes(self.packet[18:22],byteorder='big',signed=True)}
+            return
+            
         if (sensorType==Vehicle.SENSOR_TYPE_WHEEL_ENCODER):
             self.vehicleState.setdefault("steer",{}).update({sensorID:{"ticks":int.from_bytes(self.packet[0:4],byteorder='big',signed=True),
                                                                        "ts": timestamp}})
@@ -160,6 +178,8 @@ class Vehicle:
             return
 
         print(sensorType)
+        while (1==1):
+            continue
         raise(ProtocolException("Unhandled Sensor Type message"))
 
     # ======================================
