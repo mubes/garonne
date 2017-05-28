@@ -132,7 +132,10 @@ def runloop(stdscr):
     v.ledPrint()
 
     while (1):
-        avail_read,avail_write,avail_error=select.select([v,s],[],[],1)
+        remainingTime=0.1-(time.time()-lastUpdate)
+        if (remainingTime<=0):
+            remainingTime=0.001
+        avail_read,avail_write,avail_error=select.select([v,s],[],[],remainingTime)
 
         if (v in avail_read):
             v.doRead()
@@ -155,38 +158,29 @@ def runloop(stdscr):
                     if (ctrlstate["motor"]!=ctrlstatepend["motor"]):
                         v.setSpeed(ctrlstate["motor"])
 
-                    # Setting lightUpdate to zero forces an update immediately
-                    if (ctrlstate["lights"]!=ctrlstatepend["lights"]):
-                        lightUpdate=0
-                        if (ctrlstatepend["lights"]&(INDL|INDR)):
-                            flashStart=time.time()
-                        
                     ctrlstate=ctrlstatepend
                 except ValueError:
                     pass
 
-        # Update any light settings that need attention
-        if ((time.time()-lightUpdate>=0.1) and ("lights" in ctrlstate)):
-            if (ctrlstate["lights"]&HEADLIGHTS):
-                v.ledSet(light["headlights"])
-            if (ctrlstate["lights"]&HIGHBEAM):
-                v.ledSet(light["highbeam"])
-            if (ctrlstate["lights"]&BRAKES):
-                v.ledSet(light["brakes"])
-            if (ctrlstate["lights"]&INDL):
-                if ((time.time()%(flashtable["indl"][0]+flashtable["indl"][1]))<=flashtable["indl"][0]):
-                    v.ledSet(light["indl"])
-                else:
-                    v.ledSet(light["indloff"])
-            if (ctrlstate["lights"]&INDR):
-                if ((time.time()%(flashtable["indr"][0]+flashtable["indr"][1]))<=flashtable["indr"][0]):
-                    v.ledSet(light["indr"])
-                else:
-                    v.ledSet(light["indroff"])
-            v.ledPrint()
-            lightUpdate=time.time()
+        if (ctrlstate["lights"]&HEADLIGHTS):
+            v.ledSet(light["headlights"])
+        if (ctrlstate["lights"]&HIGHBEAM):
+            v.ledSet(light["highbeam"])
+        if (ctrlstate["lights"]&BRAKES):
+            v.ledSet(light["brakes"])
+        if (ctrlstate["lights"]&INDL):
+            if ((time.time()%(flashtable["indl"][0]+flashtable["indl"][1]))<=flashtable["indl"][0]):
+                v.ledSet(light["indl"])
+            else:
+                v.ledSet(light["indloff"])
+        if (ctrlstate["lights"]&INDR):
+            if ((time.time()%(flashtable["indr"][0]+flashtable["indr"][1]))<=flashtable["indr"][0]):
+                v.ledSet(light["indr"])
+            else:
+                v.ledSet(light["indroff"])
+        v.ledPrint()
                     
-        if ((config["verbose"]) and (time.time()-lastUpdate>1)):
+        if ((config["verbose"]) and (time.time()-lastUpdate>=0.1)):
             config["d"].doUpdate(v.getState(),ctrlstate)
             lastUpdate=time.time()
 

@@ -134,12 +134,14 @@ class Vehicle:
                 (self.vehicleState["Psn"]["l"][1]==self.NOLOCATION) and
                 (self.vehicleState["Psn"]["l"][2]==self.NOLOCATION)):
                 self.vehicleState["Psn"]["l"]=None
-                
+
+            self.updated.add("Psn")                
             self.vehicleState["Quat"]={"q":[int.from_bytes(self.packet[6:8],byteorder='big',signed=True),
                                             int.from_bytes(self.packet[8:10],byteorder='big',signed=True),
                                             int.from_bytes(self.packet[10:12],byteorder='big',signed=True),
                                             int.from_bytes(self.packet[12:14],byteorder='big',signed=True)],
                                        "lu":int.from_bytes(self.packet[18:22],byteorder='big',signed=True)}
+            self.updated.add("Quat")
             return
             
         if (sensorType==Vehicle.SENSOR_TYPE_WHEEL_ENCODER):
@@ -178,8 +180,6 @@ class Vehicle:
             return
 
         print(sensorType)
-        while (1==1):
-            continue
         raise(ProtocolException("Unhandled Sensor Type message"))
 
     # ======================================
