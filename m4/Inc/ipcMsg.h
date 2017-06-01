@@ -42,6 +42,7 @@
 // ============================================================================================
 struct MSGpsnandatt *IPCMsgGetpsanandatt(void);
 struct MSG9d *IPCMsgGet9d(void);
+uint32_t IPCMsgLastM0Ping(void);
 
 void IPCMsgSetup(void);
 // ============================================================================================

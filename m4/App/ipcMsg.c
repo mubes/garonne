@@ -49,6 +49,7 @@
 // ============================================================================================
 static struct MSGpsnandatt p;     /* Position and Attitude from the M0 */
 static struct MSG9d m;  		  /* 9D readings from M0 */
+static uint32_t lastPing;		  /* Last time I received a ping from the M0 */
 // ============================================================================================
 EVENT_CB(_ipcDispatch)
 
@@ -61,6 +62,7 @@ EVENT_CB(_ipcDispatch)
         case MSG_CLASS_MANAGEMENT:
             if (MSG_GET_MSG(target)==MSG_PING)
             {
+            	lastPing=xTaskGetTickCount();
                 serdesSend(MSG_ENC_PONG,0,NULL);
                 return;
             }
@@ -119,8 +121,15 @@ struct MSG9d *IPCMsgGet9d(void)
 	return &m;
 }
 // ============================================================================================
+uint32_t IPCMsgLastM0Ping(void)
+
+{
+	return lastPing;
+}
+// ============================================================================================
 void IPCMsgSetup(void)
 {
+	lastPing=xTaskGetTickCount();
     serdesInit(IPC_M4, &_ipcDispatch);
 }
 // ============================================================================================

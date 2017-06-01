@@ -70,6 +70,8 @@
 #define VL_INTERVAL             (MILLIS_TO_TICKS(100))
 #define PSNQ_TX_INTERNVAL		(MILLIS_TO_TICKS(50))
 #define NINEDENC_INTERVAL		(MILLIS_TO_TICKS(105))
+#define M0WATCHDOG_INTERVAL		(MILLIS_TO_TICKS(2000))
+#define M0WATCHDOG_CHKINTERVAL  (MILLIS_TO_TICKS(4000))
 
 struct MLStruct
 {
@@ -130,6 +132,7 @@ static portTASK_FUNCTION( _mainThread, pvParameters )
     uint32_t lastBatteryEnc = 0; /* Last time battery status was sent */
     uint32_t lastPsnQ = 0; /* Last time position and quaternion was sent */
     uint32_t last9DEnc = 0; /* Last time 9D was sent */
+    uint32_t lastM0WatchdogCheck; /* Last time M0 was checked */
     uint32_t nowTicks;
 
     uint32_t evSet; /* Events that have been set */
@@ -162,6 +165,9 @@ static portTASK_FUNCTION( _mainThread, pvParameters )
 #ifdef INCLUDE_CAN
     CANSetup();
 #endif
+
+    /* Don't even think about checking the M0 until it's had time to wake up */
+    lastM0WatchdogCheck = xTaskGetTickCount();
 
     while (1)
         {
@@ -248,6 +254,23 @@ static portTASK_FUNCTION( _mainThread, pvParameters )
             		LmsSendPosandQ(m->psn,m->q,m->tsPsn,m->tsQ);
             		lastPsnQ = nowTicks;
             	}
+            // ---------------------
+            if (nowTicks - lastM0WatchdogCheck > M0WATCHDOG_CHKINTERVAL)
+            	{
+            if (nowTicks - IPCMsgLastM0Ping() > M0WATCHDOG_INTERVAL)
+            	{
+            		/* We haven't heard for the M0 for a while - reset it */
+            		Chip_RGU_TriggerReset(RGU_M0APP_RST);
+            		Chip_Clock_Enable(CLK_M4_M0APP);
+
+            		/* Keep in mind the M0 image must be aligned on a 4K boundary */
+            		Chip_CREG_SetM0AppMemMap(M0_APPBASE);
+            		Chip_RGU_ClearReset(RGU_M0APP_RST);
+            	}
+            lastM0WatchdogCheck = nowTicks;
+            	}
+            // ---------------------
+
         }
 
 }
