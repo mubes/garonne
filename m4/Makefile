@@ -272,6 +272,6 @@ print-%:
 
 pretty:
 #The exclude is needed to prevent prettifying the cyclic link..no detrimental impact
-	$(Q)-$(ASTYLE) --options=config/astyle.conf --exclude=Inc/enet/arch "*.h" "*.c"
+	$(Q)-$(ASTYLE) --options=config/astyle.conf -i --exclude="Inc/enet/arch" "Inc/*.h" "App/*.c"
 
 -include $(PDEPS)

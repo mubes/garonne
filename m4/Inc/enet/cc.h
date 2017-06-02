@@ -62,7 +62,7 @@ typedef uintptr_t          mem_ptr_t;
 
 /* ARM/LPC17xx is little endian only */
 #ifndef BYTE_ORDER
-#define BYTE_ORDER LITTLE_ENDIAN
+    #define BYTE_ORDER LITTLE_ENDIAN
 #endif
 
 #define LWIP_TIMEVAL_PRIVATE 0
@@ -71,58 +71,58 @@ typedef uintptr_t          mem_ptr_t;
 #define LWIP_PROVIDE_ERRNO
 
 #if defined(__arm__) && defined(__ARMCC_VERSION)
-/* Keil uVision4 tools */
-#define PACK_STRUCT_BEGIN __packed
-#define PACK_STRUCT_STRUCT
-#define PACK_STRUCT_END
-#define PACK_STRUCT_FIELD(fld) fld
-#define ALIGNED(n)  __align(n)
+    /* Keil uVision4 tools */
+    #define PACK_STRUCT_BEGIN __packed
+    #define PACK_STRUCT_STRUCT
+    #define PACK_STRUCT_END
+    #define PACK_STRUCT_FIELD(fld) fld
+    #define ALIGNED(n)  __align(n)
 #elif defined (__IAR_SYSTEMS_ICC__)
-/* IAR Embedded Workbench tools */
-#define PACK_STRUCT_BEGIN __packed
-#define PACK_STRUCT_STRUCT
-#define PACK_STRUCT_END
-#define PACK_STRUCT_FIELD(fld) fld
-//    #define PACK_STRUCT_USE_INCLUDES
-#define ALIGNEDX(x)      _Pragma(#x)
-#define ALIGNEDXX(x)     ALIGNEDX(data_alignment=x)
-#define ALIGNED(x)       ALIGNEDXX(x)
+    /* IAR Embedded Workbench tools */
+    #define PACK_STRUCT_BEGIN __packed
+    #define PACK_STRUCT_STRUCT
+    #define PACK_STRUCT_END
+    #define PACK_STRUCT_FIELD(fld) fld
+    //    #define PACK_STRUCT_USE_INCLUDES
+    #define ALIGNEDX(x)      _Pragma(#x)
+    #define ALIGNEDXX(x)     ALIGNEDX(data_alignment=x)
+    #define ALIGNED(x)       ALIGNEDXX(x)
 #else
-/* GCC tools (CodeSourcery) */
-#define PACK_STRUCT_BEGIN
-#define PACK_STRUCT_STRUCT __attribute__ ((__packed__))
-#define PACK_STRUCT_END
-#define PACK_STRUCT_FIELD(fld) fld
-#define ALIGNED(n)  __attribute__((aligned (n)))
-//  #define ALIGNED(n)  __align(n)
+    /* GCC tools (CodeSourcery) */
+    #define PACK_STRUCT_BEGIN
+    #define PACK_STRUCT_STRUCT __attribute__ ((__packed__))
+    #define PACK_STRUCT_END
+    #define PACK_STRUCT_FIELD(fld) fld
+    #define ALIGNED(n)  __attribute__((aligned (n)))
+    //  #define ALIGNED(n)  __align(n)
 #endif
 
 /* Used with IP headers only */
 #define LWIP_CHKSUM_ALGORITHM 1
 
 #ifdef LWIP_DEBUG
-/**
- * @brief   Displays an error message on assertion
- * @param   msg     : Error message to display
- * @param   line    : Line number in file with error
- * @param   file    : Filename with error
- * @return  Nothing
- * @note    This function will display an error message on an assertion
- * to the debug output.
- */
-void assert_printf(char *msg, int line, char *file);
+    /**
+    * @brief   Displays an error message on assertion
+    * @param   msg     : Error message to display
+    * @param   line    : Line number in file with error
+    * @param   file    : Filename with error
+    * @return  Nothing
+    * @note    This function will display an error message on an assertion
+    * to the debug output.
+    */
+    void assert_printf( char *msg, int line, char *file );
 
-/* Plaform specific diagnostic output */
-#define LWIP_PLATFORM_DIAG(vars) dbgprint vars
-#define LWIP_PLATFORM_ASSERT(flag) { ConfigAssertDA(flag, __FILE__, __LINE__); }
+    /* Plaform specific diagnostic output */
+    #define LWIP_PLATFORM_DIAG(vars) dbgprint vars
+    #define LWIP_PLATFORM_ASSERT(flag) { ConfigAssertDA(flag, __FILE__, __LINE__); }
 #else
 
-/**
- * @brief   LWIP optimized assertion loop (no LWIP_DEBUG)
- * @return  DoesnNothing, function doesn't return
- */
-#define LWIP_PLATFORM_DIAG(msg) { ; }
-#define LWIP_PLATFORM_ASSERT(flag) { while (1); }
+    /**
+    * @brief   LWIP optimized assertion loop (no LWIP_DEBUG)
+    * @return  DoesnNothing, function doesn't return
+    */
+    #define LWIP_PLATFORM_DIAG(msg) { ; }
+    #define LWIP_PLATFORM_ASSERT(flag) { while (1); }
 #endif
 
 /**

@@ -34,7 +34,7 @@
 
 #include "app_usbd_cfg.h"
 #include "config.h"
-#include "terminal.h"
+#include "serport.h"
 
 BOOL vcom_connected(void);
 

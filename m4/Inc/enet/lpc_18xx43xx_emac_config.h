@@ -35,8 +35,7 @@
 #include "lwip/opt.h"
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /* The PHY address connected the to MII/RMII */

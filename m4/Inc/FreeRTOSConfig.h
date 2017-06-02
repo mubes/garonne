@@ -123,19 +123,19 @@ to exclude the API function. */
 header file. */
 
 #ifdef DEBUG
-void ConfigAssertDA(char *msg, char *file, uint32_t line);
-#define ASSERT(x) if (!(x)) ConfigAssertDA(NULL, __FILE__, __LINE__)
+    void ConfigAssertDA( char *msg, char *file, uint32_t line );
+    #define ASSERT(x) if (!(x)) ConfigAssertDA(NULL, __FILE__, __LINE__)
 #else
-#define ASSERT(x)
+    #define ASSERT(x)
 #endif
 
 #define configASSERT( x ) ASSERT( (x) )
 
 /* Use the system definition, if there is one */
 #ifdef __NVIC_PRIO_BITS
-#define configPRIO_BITS       __NVIC_PRIO_BITS
+    #define configPRIO_BITS       __NVIC_PRIO_BITS
 #else
-#define configPRIO_BITS       5        /* 32 priority levels */
+    #define configPRIO_BITS       5        /* 32 priority levels */
 #endif
 
 /* The lowest priority. */

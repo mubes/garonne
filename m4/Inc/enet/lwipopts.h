@@ -65,7 +65,7 @@
 #define LWIP_STATS_DISPLAY              0
 
 #ifdef DEBUG
-#define LWIP_DEBUG                      1
+    #define LWIP_DEBUG                      1
 #endif
 
 #define LWIP_DEBUG 1

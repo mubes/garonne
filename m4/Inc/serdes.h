@@ -37,11 +37,11 @@
 #include "ipcHandler.h"
 
 // ============================================================================================
-uint32_t serdesTarget(enum ipc port);
-uint32_t serdesLen(enum ipc port);
-uint8_t *serdesData(enum ipc port);
-void serdesReceive(enum ipc port);
-BOOL serdesSend(uint32_t target, uint8_t len, uint8_t *data);
+uint32_t serdesTarget( enum ipc port );
+uint32_t serdesLen( enum ipc port );
+uint8_t *serdesData( enum ipc port );
+void serdesReceive( enum ipc port );
+BOOL serdesSend( uint32_t target, uint8_t len, uint8_t *data );
 
-void serdesInit(enum ipc port, EVENT_CB(*cb_set));
+void serdesInit( enum ipc port, EVENT_CB( *cb_set ) );
 // ============================================================================================

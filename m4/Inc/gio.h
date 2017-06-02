@@ -48,17 +48,18 @@ enum DBG_LED_ENUM {DBG0_LED, NUM_DEBUG_LEDS };
 #define NO_BATT   (0)                   /* Indicator that there is no battery present */
 
 // ============================================================================================
-void GIOTaskRun(void);
-void GIORGBLedSetColour(enum RGB_LED_ENUM l, uint32_t c);
-uint16_t GIOBattery(void);
-void GIOSetConnected(BOOL newConnectedVal);
-void GIOdebugLedSet(enum DBG_LED_ENUM led);
-void GIOdebugLedClear(enum DBG_LED_ENUM led);
-void GIOdebugLedToggle(enum DBG_LED_ENUM led);
-void GIOSmoke(BOOL isSmoking);
-BOOL GIOUserButtonState(void);
-uint32_t GIOFlags(void);
-uint32_t GIOTemp(void);
-void GIOSetup(void);
+void GIOTaskRun( void );
+void GIORGBLedSetColour( enum RGB_LED_ENUM l, uint32_t c );
+uint16_t GIOBattery( void );
+void GIOSetConnected( BOOL newConnectedVal );
+void GIOdebugLedSet( enum DBG_LED_ENUM led );
+void GIOdebugLedClear( enum DBG_LED_ENUM led );
+void GIOdebugLedToggle( enum DBG_LED_ENUM led );
+void GIOSmoke( BOOL isSmoking );
+BOOL GIOUserButtonState( void );
+uint32_t GIOFlags( void );
+uint32_t GIOTemp( void );
+
+void GIOSetup( void );
 // ============================================================================================
 #endif /* _GIO_H_ */

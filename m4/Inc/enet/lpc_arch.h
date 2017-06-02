@@ -35,8 +35,7 @@
 #include "lwip/opt.h"
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /** @defgroup NET_LWIP_ARCH Architecture specific functions used with the LWIP examples
@@ -52,7 +51,7 @@ extern "C"
  * @note    This enables the systick interrupt and sets up the systick rate. This
  * function is only used in standalone systems.
  */
-void SysTick_Enable(uint32_t period);
+void SysTick_Enable( uint32_t period );
 
 /**
  * @brief   Disable LWIP tick
@@ -60,7 +59,7 @@ void SysTick_Enable(uint32_t period);
  * This disables the systick interrupt. This function is only used in
  * standalone systems.
  */
-void SysTick_Disable(void);
+void SysTick_Disable( void );
 
 /**
  * @brief   Get the current systick time in milliSeconds
@@ -68,7 +67,7 @@ void SysTick_Disable(void);
  * @note    Returns the current systick time in milliSeconds. This function is only
  * used in standalone systems.
  */
-uint32_t SysTick_GetMS(void);
+uint32_t SysTick_GetMS( void );
 
 #endif
 
@@ -80,7 +79,7 @@ uint32_t SysTick_GetMS(void);
  * number of milliSconds. For RTOS based systems, this function will delay
  * the task by the specified number of milliSeconds.
  */
-void msDelay(uint32_t ms);
+void msDelay( uint32_t ms );
 
 /**
  * @}

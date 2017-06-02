@@ -1,7 +1,7 @@
 #ifndef INC_AUDIO_SAMPLES_H_
 #define INC_AUDIO_SAMPLES_H_
 #include "config.h"
-const uint32_t speedy[]=
+const uint32_t speedy[] =
 {
     0x18000, 0x18000, 0x18000, 0x18000,
     0x18000, 0x18000, 0x18000, 0x18000,

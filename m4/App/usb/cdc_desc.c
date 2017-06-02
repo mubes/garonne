@@ -43,18 +43,18 @@
 /**
  * USB Standard Device Descriptor
  */
-ALIGNED(4) const uint8_t USB_DeviceDescriptor[] =
+ALIGNED( 4 ) const uint8_t USB_DeviceDescriptor[] =
 {
     USB_DEVICE_DESC_SIZE,               /* bLength */
     USB_DEVICE_DESCRIPTOR_TYPE,         /* bDescriptorType */
-    WBVAL(0x0200),                      /* bcdUSB */
+    WBVAL( 0x0200 ),                    /* bcdUSB */
     0xEF,                               /* bDeviceClass */
     0x02,                               /* bDeviceSubClass */
     0x01,                               /* bDeviceProtocol */
     USB_MAX_PACKET0,                    /* bMaxPacketSize0 */
-    WBVAL(USB_VENDOR_ID),               /* idVendor */
-    WBVAL(USB_DEVICE_ID),               /* idProduct */
-    WBVAL(0x0100),                      /* bcdDevice */
+    WBVAL( USB_VENDOR_ID ),             /* idVendor */
+    WBVAL( USB_DEVICE_ID ),             /* idProduct */
+    WBVAL( 0x0100 ),                    /* bcdDevice */
     0x01,                               /* iManufacturer */
     0x02,                               /* iProduct */
     0x03,                               /* iSerialNumber */
@@ -65,26 +65,26 @@ ALIGNED(4) const uint8_t USB_DeviceDescriptor[] =
  * USB FSConfiguration Descriptor
  * All Descriptors (Configuration, Interface, Endpoint, Class, Vendor)
  */
-ALIGNED(4) uint8_t USB_FsConfigDescriptor[] =
+ALIGNED( 4 ) uint8_t USB_FsConfigDescriptor[] =
 {
     /* Configuration 1 */
     USB_CONFIGURATION_DESC_SIZE,            /* bLength */
     USB_CONFIGURATION_DESCRIPTOR_TYPE,      /* bDescriptorType */
     WBVAL(                                  /* wTotalLength */
-        USB_CONFIGURATION_DESC_SIZE     +
-        USB_INTERFACE_ASSOC_DESC_SIZE   +   /* interface association descriptor */
-        USB_INTERFACE_DESC_SIZE         +   /* communication control interface */
-        0x0013                          +   /* CDC functions */
-        1 * USB_ENDPOINT_DESC_SIZE      +   /* interrupt endpoint */
-        USB_INTERFACE_DESC_SIZE         +   /* communication data interface */
-        2 * USB_ENDPOINT_DESC_SIZE      +   /* bulk endpoints */
-        0
+                USB_CONFIGURATION_DESC_SIZE     +
+                USB_INTERFACE_ASSOC_DESC_SIZE   +   /* interface association descriptor */
+                USB_INTERFACE_DESC_SIZE         +   /* communication control interface */
+                0x0013                          +   /* CDC functions */
+                1 * USB_ENDPOINT_DESC_SIZE      +   /* interrupt endpoint */
+                USB_INTERFACE_DESC_SIZE         +   /* communication data interface */
+                2 * USB_ENDPOINT_DESC_SIZE      +   /* bulk endpoints */
+                0
     ),
     0x02,                                   /* bNumInterfaces */
     0x01,                                   /* bConfigurationValue */
     0x00,                                   /* iConfiguration */
     USB_CONFIG_SELF_POWERED,                /* bmAttributes  */
-    USB_CONFIG_POWER_MA(500),               /* bMaxPower */
+    USB_CONFIG_POWER_MA( 500 ),             /* bMaxPower */
 
     /* Interface association descriptor IAD*/
     USB_INTERFACE_ASSOC_DESC_SIZE,      /* bLength */
@@ -110,7 +110,7 @@ ALIGNED(4) uint8_t USB_FsConfigDescriptor[] =
     0x05,                               /* bLength: CDC header Descriptor size */
     CDC_CS_INTERFACE,                   /* bDescriptorType: CS_INTERFACE */
     CDC_HEADER,                         /* bDescriptorSubtype: Header Func Desc */
-    WBVAL(CDC_V1_10),                   /* bcdCDC 1.10 */
+    WBVAL( CDC_V1_10 ),                 /* bcdCDC 1.10 */
     /* Call Management Functional Descriptor*/
     0x05,                               /* bFunctionLength */
     CDC_CS_INTERFACE,                   /* bDescriptorType: CS_INTERFACE */
@@ -133,7 +133,7 @@ ALIGNED(4) uint8_t USB_FsConfigDescriptor[] =
     USB_ENDPOINT_DESCRIPTOR_TYPE,       /* bDescriptorType */
     USB_CDC_INT_EP,                     /* bEndpointAddress */
     USB_ENDPOINT_TYPE_INTERRUPT,        /* bmAttributes */
-    WBVAL(0x0010),                      /* wMaxPacketSize */
+    WBVAL( 0x0010 ),                    /* wMaxPacketSize */
     0x02,           /* 2ms */           /* bInterval */
 
     /* Interface 1, Alternate Setting 0, Data class interface descriptor*/
@@ -151,14 +151,14 @@ ALIGNED(4) uint8_t USB_FsConfigDescriptor[] =
     USB_ENDPOINT_DESCRIPTOR_TYPE,       /* bDescriptorType */
     USB_CDC_OUT_EP,                     /* bEndpointAddress */
     USB_ENDPOINT_TYPE_BULK,             /* bmAttributes */
-    WBVAL(USB_FS_MAX_BULK_PACKET),      /* wMaxPacketSize */
+    WBVAL( USB_FS_MAX_BULK_PACKET ),    /* wMaxPacketSize */
     0x00,                               /* bInterval: ignore for Bulk transfer */
     /* Endpoint, EP Bulk In */
     USB_ENDPOINT_DESC_SIZE,             /* bLength */
     USB_ENDPOINT_DESCRIPTOR_TYPE,       /* bDescriptorType */
     USB_CDC_IN_EP,                      /* bEndpointAddress */
     USB_ENDPOINT_TYPE_BULK,             /* bmAttributes */
-    WBVAL(USB_FS_MAX_BULK_PACKET),      /* wMaxPacketSize */
+    WBVAL( USB_FS_MAX_BULK_PACKET ),    /* wMaxPacketSize */
     0x00,                               /* bInterval: ignore for Bulk transfer */
     /* Terminator */
     0                                   /* bLength */
@@ -169,26 +169,26 @@ ALIGNED(4) uint8_t USB_FsConfigDescriptor[] =
  * USB FSConfiguration Descriptor
  * All Descriptors (Configuration, Interface, Endpoint, Class, Vendor)
  */
-ALIGNED(4) uint8_t USB_HsConfigDescriptor[] =
+ALIGNED( 4 ) uint8_t USB_HsConfigDescriptor[] =
 {
     /* Configuration 1 */
     USB_CONFIGURATION_DESC_SIZE,            /* bLength */
     USB_CONFIGURATION_DESCRIPTOR_TYPE,      /* bDescriptorType */
     WBVAL(                                  /* wTotalLength */
-        USB_CONFIGURATION_DESC_SIZE     +
-        USB_INTERFACE_ASSOC_DESC_SIZE   +   /* interface association descriptor */
-        USB_INTERFACE_DESC_SIZE         +   /* communication control interface */
-        0x0013                          +   /* CDC functions */
-        1 * USB_ENDPOINT_DESC_SIZE      +   /* interrupt endpoint */
-        USB_INTERFACE_DESC_SIZE         +   /* communication data interface */
-        2 * USB_ENDPOINT_DESC_SIZE      +   /* bulk endpoints */
-        0
+                USB_CONFIGURATION_DESC_SIZE     +
+                USB_INTERFACE_ASSOC_DESC_SIZE   +   /* interface association descriptor */
+                USB_INTERFACE_DESC_SIZE         +   /* communication control interface */
+                0x0013                          +   /* CDC functions */
+                1 * USB_ENDPOINT_DESC_SIZE      +   /* interrupt endpoint */
+                USB_INTERFACE_DESC_SIZE         +   /* communication data interface */
+                2 * USB_ENDPOINT_DESC_SIZE      +   /* bulk endpoints */
+                0
     ),
     0x02,                                   /* bNumInterfaces */
     0x01,                                   /* bConfigurationValue */
     0x00,                                   /* iConfiguration */
     USB_CONFIG_SELF_POWERED,                /* bmAttributes  */
-    USB_CONFIG_POWER_MA(500),               /* bMaxPower */
+    USB_CONFIG_POWER_MA( 500 ),             /* bMaxPower */
 
     /* Interface association descriptor IAD*/
     USB_INTERFACE_ASSOC_DESC_SIZE,      /* bLength */
@@ -214,7 +214,7 @@ ALIGNED(4) uint8_t USB_HsConfigDescriptor[] =
     0x05,                               /* bLength: CDC header Descriptor size */
     CDC_CS_INTERFACE,                   /* bDescriptorType: CS_INTERFACE */
     CDC_HEADER,                         /* bDescriptorSubtype: Header Func Desc */
-    WBVAL(CDC_V1_10),                   /* bcdCDC 1.10 */
+    WBVAL( CDC_V1_10 ),                 /* bcdCDC 1.10 */
     /* Call Management Functional Descriptor*/
     0x05,                               /* bFunctionLength */
     CDC_CS_INTERFACE,                   /* bDescriptorType: CS_INTERFACE */
@@ -237,7 +237,7 @@ ALIGNED(4) uint8_t USB_HsConfigDescriptor[] =
     USB_ENDPOINT_DESCRIPTOR_TYPE,       /* bDescriptorType */
     USB_CDC_INT_EP,                     /* bEndpointAddress */
     USB_ENDPOINT_TYPE_INTERRUPT,        /* bmAttributes */
-    WBVAL(0x0010),                      /* wMaxPacketSize */
+    WBVAL( 0x0010 ),                    /* wMaxPacketSize */
     0x02,           /* 2ms */           /* bInterval */
 
     /* Interface 1, Alternate Setting 0, Data class interface descriptor*/
@@ -255,24 +255,24 @@ ALIGNED(4) uint8_t USB_HsConfigDescriptor[] =
     USB_ENDPOINT_DESCRIPTOR_TYPE,       /* bDescriptorType */
     USB_CDC_OUT_EP,                     /* bEndpointAddress */
     USB_ENDPOINT_TYPE_BULK,             /* bmAttributes */
-    WBVAL(USB_HS_MAX_BULK_PACKET),      /* wMaxPacketSize */
+    WBVAL( USB_HS_MAX_BULK_PACKET ),    /* wMaxPacketSize */
     0x00,                               /* bInterval: ignore for Bulk transfer */
     /* Endpoint, EP Bulk In */
     USB_ENDPOINT_DESC_SIZE,             /* bLength */
     USB_ENDPOINT_DESCRIPTOR_TYPE,       /* bDescriptorType */
     USB_CDC_IN_EP,                      /* bEndpointAddress */
     USB_ENDPOINT_TYPE_BULK,             /* bmAttributes */
-    WBVAL(USB_HS_MAX_BULK_PACKET),      /* wMaxPacketSize */
+    WBVAL( USB_HS_MAX_BULK_PACKET ),    /* wMaxPacketSize */
     0x00,                               /* bInterval: ignore for Bulk transfer */
     /* Terminator */
     0                                   /* bLength */
 };
 
-ALIGNED(4) const uint8_t USB_DeviceQualifier[] =
+ALIGNED( 4 ) const uint8_t USB_DeviceQualifier[] =
 {
     USB_DEVICE_QUALI_SIZE,                                  /* bLength */
     USB_DEVICE_QUALIFIER_DESCRIPTOR_TYPE,   /* bDescriptorType */
-    WBVAL(0x0200),                                                  /* bcdUSB: 2.00 */
+    WBVAL( 0x0200 ),                                                /* bcdUSB: 2.00 */
     0x00,                                                                   /* bDeviceClass */
     0x00,                                                                   /* bDeviceSubClass */
     0x00,                                                                   /* bDeviceProtocol */
@@ -284,30 +284,30 @@ ALIGNED(4) const uint8_t USB_DeviceQualifier[] =
 /**
  * USB String Descriptor (optional)
  */
-ALIGNED(4) uint8_t USB_StringDescriptor[] =
+ALIGNED( 4 ) uint8_t USB_StringDescriptor[] =
 {
     /* Index 0x00: LANGID Codes */
     0x04,                               /* bLength */
     USB_STRING_DESCRIPTOR_TYPE,         /* bDescriptorType */
-    WBVAL(0x0409),  /* US English */    /* wLANGID */
+    WBVAL( 0x0409 ),  /* US English */  /* wLANGID */
 
     /* Index 0x01: Manufacturer */
-    (USB_MANUFACTURER_LEN * 2 + 2),                     /* bLength */
+    ( USB_MANUFACTURER_LEN * 2 + 2 ),                   /* bLength */
     USB_STRING_DESCRIPTOR_TYPE,         /* bDescriptorType */
     USB_MANUFACTURER,
 
     /* Index 0x02: Product */
-    (USB_PRODUCT_LEN * 2 + 2),                      /* bLength */
+    ( USB_PRODUCT_LEN * 2 + 2 ),                    /* bLength */
     USB_STRING_DESCRIPTOR_TYPE,         /* bDescriptorType */
     USB_PRODUCT,
 
     /* Index 0x03: Serial Number */
-    (USB_SERIAL_NUMBER_LEN * 2 + 2),                        /* bLength  */
+    ( USB_SERIAL_NUMBER_LEN * 2 + 2 ),                      /* bLength  */
     USB_STRING_DESCRIPTOR_TYPE,         /* bDescriptorType */
     USB_SERIAL_NUMBER,
 
     /* Index 0x04: Interface 1, Alternate Setting 0 */
-    ( USB_SETTING_NAME_LEN * 2 + 2),        /* bLength  */
+    ( USB_SETTING_NAME_LEN * 2 + 2 ),       /* bLength  */
     USB_STRING_DESCRIPTOR_TYPE,         /* bDescriptorType */
     USB_SETTING_NAME,
 };

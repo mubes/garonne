@@ -49,18 +49,18 @@
 
 #ifdef INCLUDE_ETHERNET
 
-extern void msDelay(uint32_t ms);
+extern void msDelay( uint32_t ms );
 
 #if LPC_NUM_BUFF_TXDESCS < 2
-#error LPC_NUM_BUFF_TXDESCS must be at least 2
+    #error LPC_NUM_BUFF_TXDESCS must be at least 2
 #endif
 
 #if LPC_NUM_BUFF_RXDESCS < 3
-#error LPC_NUM_BUFF_RXDESCS must be at least 3
+    #error LPC_NUM_BUFF_RXDESCS must be at least 3
 #endif
 
 #ifndef LPC_CHECK_SLOWMEM
-#error LPC_CHECK_SLOWMEM must be 0 or 1
+    #error LPC_CHECK_SLOWMEM must be 0 or 1
 #endif
 
 /** @ingroup NET_LWIP_LPC18XX43XX_EMAC_DRIVER
@@ -72,14 +72,14 @@ extern void msDelay(uint32_t ms);
  ****************************************************************************/
 
 #if NO_SYS == 0
-/**
- * @brief   Driver transmit and receive thread priorities
- * Thread priorities for receive thread and TX cleanup thread. Alter
- * to prioritize receive or transmit bandwidth. In a heavily loaded
- * system or with LWIP_DEBUG enabled, the priorities might be better
- * the same. */
-#define tskTXCLEAN_PRIORITY  (TCPIP_THREAD_PRIO - 1)
-#define tskRECPKT_PRIORITY   (TCPIP_THREAD_PRIO - 1)
+    /**
+    * @brief   Driver transmit and receive thread priorities
+    * Thread priorities for receive thread and TX cleanup thread. Alter
+    * to prioritize receive or transmit bandwidth. In a heavily loaded
+    * system or with LWIP_DEBUG enabled, the priorities might be better
+    * the same. */
+    #define tskTXCLEAN_PRIORITY  (TCPIP_THREAD_PRIO - 1)
+    #define tskRECPKT_PRIORITY   (TCPIP_THREAD_PRIO - 1)
 #endif
 
 /** @brief  Debug output formatter lock define
@@ -140,8 +140,8 @@ const static struct lpc_slowmem_array_t slmem[] = LPC_SLOWMEM_ARRAY;
  ****************************************************************************/
 
 /* Queues a pbuf into a free RX descriptor */
-static void lpc_rxqueue_pbuf(struct lpc_enetdata *lpc_netifdata,
-                             struct pbuf *p)
+static void lpc_rxqueue_pbuf( struct lpc_enetdata *lpc_netifdata,
+                              struct pbuf *p )
 {
     u32_t idx = lpc_netifdata->rx_next_idx;
 
@@ -149,13 +149,15 @@ static void lpc_rxqueue_pbuf(struct lpc_enetdata *lpc_netifdata,
     lpc_netifdata->rxpbufs[idx] = p;
 
     /* Buffer size and address for pbuf */
-    lpc_netifdata->prdesc[idx].CTRL = (u32_t) RDES_ENH_BS1(p->len) |
+    lpc_netifdata->prdesc[idx].CTRL = ( u32_t ) RDES_ENH_BS1( p->len ) |
                                       RDES_ENH_RCH;
-    if (idx == (LPC_NUM_BUFF_RXDESCS - 1))
-        {
-            lpc_netifdata->prdesc[idx].CTRL |= RDES_ENH_RER;
-        }
-    lpc_netifdata->prdesc[idx].B1ADD = (u32_t) p->payload;
+
+    if ( idx == ( LPC_NUM_BUFF_RXDESCS - 1 ) )
+    {
+        lpc_netifdata->prdesc[idx].CTRL |= RDES_ENH_RER;
+    }
+
+    lpc_netifdata->prdesc[idx].B1ADD = ( u32_t ) p->payload;
 
     /* Give descriptor to MAC/DMA */
     lpc_netifdata->prdesc[idx].STATUS = RDES_OWN;
@@ -163,21 +165,23 @@ static void lpc_rxqueue_pbuf(struct lpc_enetdata *lpc_netifdata,
     /* Update free count */
     lpc_netifdata->rx_free_descs--;
 
-    LWIP_DEBUGF(EMAC_DEBUG | LWIP_DBG_TRACE,
-                ("lpc_rxqueue_pbuf: Queueing packet %p at index %d, free %d\n",
-                 p, idx, lpc_netifdata->rx_free_descs));
+    LWIP_DEBUGF( EMAC_DEBUG | LWIP_DBG_TRACE,
+                 ( "lpc_rxqueue_pbuf: Queueing packet %p at index %d, free %d\n",
+                   p, idx, lpc_netifdata->rx_free_descs ) );
 
     /* Update index for next pbuf */
     idx++;
-    if (idx >= LPC_NUM_BUFF_RXDESCS)
-        {
-            idx = 0;
-        }
+
+    if ( idx >= LPC_NUM_BUFF_RXDESCS )
+    {
+        idx = 0;
+    }
+
     lpc_netifdata->rx_next_idx = idx;
 }
 
 /* This function sets up the descriptor list used for receive packets */
-static err_t lpc_rx_setup(struct lpc_enetdata *lpc_netifdata)
+static err_t lpc_rx_setup( struct lpc_enetdata *lpc_netifdata )
 {
     s32_t idx;
 
@@ -187,35 +191,36 @@ static err_t lpc_rx_setup(struct lpc_enetdata *lpc_netifdata)
     lpc_netifdata->rx_free_descs = LPC_NUM_BUFF_RXDESCS;
 
     /* Clear initial RX descriptor list */
-    memset(lpc_netifdata->prdesc, 0, sizeof(lpc_netifdata->prdesc));
+    memset( lpc_netifdata->prdesc, 0, sizeof( lpc_netifdata->prdesc ) );
 
     /* Setup buffer chaining before allocating pbufs for descriptors
        just in case memory runs out. */
-    for (idx = 0; idx < LPC_NUM_BUFF_RXDESCS; idx++)
-        {
-            lpc_netifdata->prdesc[idx].CTRL = RDES_ENH_RCH;
-            lpc_netifdata->prdesc[idx].B2ADD = (u32_t)
-                                               &lpc_netifdata->prdesc[idx + 1];
-        }
+    for ( idx = 0; idx < LPC_NUM_BUFF_RXDESCS; idx++ )
+    {
+        lpc_netifdata->prdesc[idx].CTRL = RDES_ENH_RCH;
+        lpc_netifdata->prdesc[idx].B2ADD = ( u32_t )
+                                           &lpc_netifdata->prdesc[idx + 1];
+    }
+
     lpc_netifdata->prdesc[LPC_NUM_BUFF_RXDESCS - 1].CTRL =
-        RDES_ENH_RCH | RDES_ENH_RER;
+                RDES_ENH_RCH | RDES_ENH_RER;
     lpc_netifdata->prdesc[LPC_NUM_BUFF_RXDESCS - 1].B2ADD =
-        (u32_t) &lpc_netifdata->prdesc[0];
-    LPC_ETHERNET->DMA_REC_DES_ADDR = (u32_t) lpc_netifdata->prdesc;
+                ( u32_t ) &lpc_netifdata->prdesc[0];
+    LPC_ETHERNET->DMA_REC_DES_ADDR = ( u32_t ) lpc_netifdata->prdesc;
 
     /* Setup up RX pbuf queue, but post a warning if not enough were
        queued for all descriptors. */
-    if (lpc_rx_queue(lpc_netifdata->netif) != LPC_NUM_BUFF_RXDESCS)
-        {
-            LWIP_DEBUGF(EMAC_DEBUG | LWIP_DBG_TRACE,
-                        ("lpc_rx_setup: Warning, not enough memory for RX pbufs\n"));
-        }
+    if ( lpc_rx_queue( lpc_netifdata->netif ) != LPC_NUM_BUFF_RXDESCS )
+    {
+        LWIP_DEBUGF( EMAC_DEBUG | LWIP_DBG_TRACE,
+                     ( "lpc_rx_setup: Warning, not enough memory for RX pbufs\n" ) );
+    }
 
     return ERR_OK;
 }
 
 /* Gets data from queue and forwards to LWIP */
-static struct pbuf *lpc_low_level_input(struct netif *netif)
+static struct pbuf *lpc_low_level_input( struct netif *netif )
 {
     struct lpc_enetdata *lpc_netifdata = netif->state;
     u32_t status, ridx;
@@ -225,36 +230,36 @@ static struct pbuf *lpc_low_level_input(struct netif *netif)
 #ifdef LOCK_RX_THREAD
 #if NO_SYS == 0
     /* Get exclusive access */
-    sys_mutex_lock(&lpc_netifdata->TXLockMutex);
+    sys_mutex_lock( &lpc_netifdata->TXLockMutex );
 #endif
 #endif
 
     /* If there are no used descriptors, then this call was
        not for a received packet, try to setup some descriptors now */
-    if (lpc_netifdata->rx_free_descs == LPC_NUM_BUFF_RXDESCS)
-        {
-            lpc_rx_queue(netif);
+    if ( lpc_netifdata->rx_free_descs == LPC_NUM_BUFF_RXDESCS )
+    {
+        lpc_rx_queue( netif );
 #ifdef LOCK_RX_THREAD
 #if NO_SYS == 0
-            sys_mutex_unlock(&lpc_netifdata->TXLockMutex);
+        sys_mutex_unlock( &lpc_netifdata->TXLockMutex );
 #endif
 #endif
-            return NULL;
-        }
+        return NULL;
+    }
 
     /* Get index for next descriptor with data */
     ridx = lpc_netifdata->rx_get_idx;
 
     /* Return if descriptor is still owned by DMA */
-    if (lpc_netifdata->prdesc[ridx].STATUS & RDES_OWN)
-        {
+    if ( lpc_netifdata->prdesc[ridx].STATUS & RDES_OWN )
+    {
 #ifdef LOCK_RX_THREAD
 #if NO_SYS == 0
-            sys_mutex_unlock(&lpc_netifdata->TXLockMutex);
+        sys_mutex_unlock( &lpc_netifdata->TXLockMutex );
 #endif
 #endif
-            return NULL;
-        }
+        return NULL;
+    }
 
     /* Get address of pbuf for this descriptor */
     p = lpc_netifdata->rxpbufs[ridx];
@@ -263,80 +268,85 @@ static struct pbuf *lpc_low_level_input(struct netif *netif)
     status = lpc_netifdata->prdesc[ridx].STATUS;
 
     /* Check packet for errors */
-    if (status & RDES_ES)
+    if ( status & RDES_ES )
+    {
+        LINK_STATS_INC( link.drop );
+
+        /* Error conditions that cause a packet drop */
+        if ( status & intMask )
         {
-            LINK_STATS_INC(link.drop);
-
-            /* Error conditions that cause a packet drop */
-            if (status & intMask)
-                {
-                    LINK_STATS_INC(link.err);
-                    rxerr = 1;
-                }
-            else
-                /* Length error check needs qualification */
-                if ((status & (RDES_LE | RDES_FT)) == RDES_LE)
-                    {
-                        LINK_STATS_INC(link.lenerr);
-                        rxerr = 1;
-                    }
-                else
-                    /* CRC error check needs qualification */
-                    if ((status & (RDES_CE | RDES_LS)) == (RDES_CE | RDES_LS))
-                        {
-                            LINK_STATS_INC(link.chkerr);
-                            rxerr = 1;
-                        }
-
-            /* Descriptor error check needs qualification */
-            if ((status & (RDES_DE | RDES_LS)) == (RDES_DE | RDES_LS))
-                {
-                    LINK_STATS_INC(link.err);
-                    rxerr = 1;
-                }
-            else
-                /* Dribble bit error only applies in half duplex mode */
-                if ((status & RDES_DE) &&
-                        (!(LPC_ETHERNET->MAC_CONFIG & MAC_CFG_DM)))
-                    {
-                        LINK_STATS_INC(link.err);
-                        rxerr = 1;
-                    }
+            LINK_STATS_INC( link.err );
+            rxerr = 1;
         }
+        else
+
+            /* Length error check needs qualification */
+            if ( ( status & ( RDES_LE | RDES_FT ) ) == RDES_LE )
+            {
+                LINK_STATS_INC( link.lenerr );
+                rxerr = 1;
+            }
+            else
+
+                /* CRC error check needs qualification */
+                if ( ( status & ( RDES_CE | RDES_LS ) ) == ( RDES_CE | RDES_LS ) )
+                {
+                    LINK_STATS_INC( link.chkerr );
+                    rxerr = 1;
+                }
+
+        /* Descriptor error check needs qualification */
+        if ( ( status & ( RDES_DE | RDES_LS ) ) == ( RDES_DE | RDES_LS ) )
+        {
+            LINK_STATS_INC( link.err );
+            rxerr = 1;
+        }
+        else
+
+            /* Dribble bit error only applies in half duplex mode */
+            if ( ( status & RDES_DE ) &&
+                    ( !( LPC_ETHERNET->MAC_CONFIG & MAC_CFG_DM ) ) )
+            {
+                LINK_STATS_INC( link.err );
+                rxerr = 1;
+            }
+    }
 
     /* Increment free descriptor count and next get index */
     lpc_netifdata->rx_free_descs++;
     ridx++;
-    if (ridx >= LPC_NUM_BUFF_RXDESCS)
-        {
-            ridx = 0;
-        }
+
+    if ( ridx >= LPC_NUM_BUFF_RXDESCS )
+    {
+        ridx = 0;
+    }
+
     lpc_netifdata->rx_get_idx = ridx;
 
     /* If an error occurred, just re-queue the pbuf */
-    if (rxerr)
-        {
-            lpc_rxqueue_pbuf(lpc_netifdata, p);
-            p = NULL;
+    if ( rxerr )
+    {
+        lpc_rxqueue_pbuf( lpc_netifdata, p );
+        p = NULL;
 
-            LWIP_DEBUGF(EMAC_DEBUG | LWIP_DBG_TRACE,
-                        ("lpc_low_level_input: RX error condition status 0x%08x\n",
-                         status));
-        }
+        LWIP_DEBUGF( EMAC_DEBUG | LWIP_DBG_TRACE,
+                     ( "lpc_low_level_input: RX error condition status 0x%08x\n",
+                       status ) );
+    }
     else
-        {
-            /* Attempt to queue a new pbuf for the descriptor */
-            lpc_rx_queue(netif);
+    {
+        /* Attempt to queue a new pbuf for the descriptor */
+        lpc_rx_queue( netif );
 
-            /* Get length of received packet */
-            p->len = p->tot_len = (u16_t) RDES_FLMSK(status);
+        /* Get length of received packet */
+        p->len = p->tot_len = ( u16_t ) RDES_FLMSK( status );
 
-            LINK_STATS_INC(link.recv);
+        LINK_STATS_INC( link.recv );
 
-            LWIP_DEBUGF(EMAC_DEBUG | LWIP_DBG_TRACE,
-                        ("lpc_low_level_input: Packet received, %d bytes, "
-                         "status 0x%08x\n", p->len, status));
-        }
+        LWIP_DEBUGF( EMAC_DEBUG | LWIP_DBG_TRACE,
+                     ( "lpc_low_level_input: Packet received, %d bytes, "
+                       "status 0x%08x\n", p->len, status ) );
+    }
 
     /* (Re)start receive polling */
     LPC_ETHERNET->DMA_REC_POLL_DEMAND = 1;
@@ -344,7 +354,7 @@ static struct pbuf *lpc_low_level_input(struct netif *netif)
 #ifdef LOCK_RX_THREAD
 #if NO_SYS == 0
     /* Get exclusive access */
-    sys_mutex_unlock(&lpc_netifdata->TXLockMutex);
+    sys_mutex_unlock( &lpc_netifdata->TXLockMutex );
 #endif
 #endif
 
@@ -352,37 +362,38 @@ static struct pbuf *lpc_low_level_input(struct netif *netif)
 }
 
 /* This function sets up the descriptor list used for transmit packets */
-static err_t lpc_tx_setup(struct lpc_enetdata *lpc_netifdata)
+static err_t lpc_tx_setup( struct lpc_enetdata *lpc_netifdata )
 {
     s32_t idx;
 
     /* Clear TX descriptors, will be queued with pbufs as needed */
-    memset((void *) &lpc_netifdata->ptdesc[0], 0, sizeof(lpc_netifdata->ptdesc));
+    memset( ( void * ) &lpc_netifdata->ptdesc[0], 0, sizeof( lpc_netifdata->ptdesc ) );
     lpc_netifdata->tx_free_descs = LPC_NUM_BUFF_TXDESCS;
     lpc_netifdata->tx_fill_idx = 0;
     lpc_netifdata->tx_reclaim_idx = 0;
 
     /* Link/wrap descriptors */
-    for (idx = 0; idx < LPC_NUM_BUFF_TXDESCS; idx++)
-        {
-            lpc_netifdata->ptdesc[idx].CTRLSTAT = TDES_ENH_TCH | TDES_ENH_CIC(3);
-            lpc_netifdata->ptdesc[idx].B2ADD =
-                (u32_t) &lpc_netifdata->ptdesc[idx + 1];
-        }
+    for ( idx = 0; idx < LPC_NUM_BUFF_TXDESCS; idx++ )
+    {
+        lpc_netifdata->ptdesc[idx].CTRLSTAT = TDES_ENH_TCH | TDES_ENH_CIC( 3 );
+        lpc_netifdata->ptdesc[idx].B2ADD =
+                    ( u32_t ) &lpc_netifdata->ptdesc[idx + 1];
+    }
+
     lpc_netifdata->ptdesc[LPC_NUM_BUFF_TXDESCS - 1].CTRLSTAT =
-        TDES_ENH_TCH | TDES_ENH_TER | TDES_ENH_CIC(3);
+                TDES_ENH_TCH | TDES_ENH_TER | TDES_ENH_CIC( 3 );
     lpc_netifdata->ptdesc[LPC_NUM_BUFF_TXDESCS - 1].B2ADD =
-        (u32_t) &lpc_netifdata->ptdesc[0];
+                ( u32_t ) &lpc_netifdata->ptdesc[0];
 
     /* Setup pointer to TX descriptor table */
-    LPC_ETHERNET->DMA_TRANS_DES_ADDR = (u32_t) lpc_netifdata->ptdesc;
+    LPC_ETHERNET->DMA_TRANS_DES_ADDR = ( u32_t ) lpc_netifdata->ptdesc;
 
     return ERR_OK;
 }
 
 /* Low level output of a packet. Never call this from an interrupt context,
    as it may block until TX descriptors become available */
-static err_t lpc_low_level_output(struct netif *netif, struct pbuf *sendp)
+static err_t lpc_low_level_output( struct netif *netif, struct pbuf *sendp )
 {
     struct lpc_enetdata *lpc_netifdata = netif->state;
     u32_t idx, fidx, dn;
@@ -396,64 +407,70 @@ static err_t lpc_low_level_output(struct netif *netif, struct pbuf *sendp)
 
     /* Check packet address to determine if it's in slow memory and
        relocate if necessary */
-    for (q = p; ((q != NULL) && (pcopy == 0)); q = q->next)
+    for ( q = p; ( ( q != NULL ) && ( pcopy == 0 ) ); q = q->next )
+    {
+        fidx = 0;
+
+        for ( idx = 0; idx < sizeof( slmem );
+                idx += sizeof( struct lpc_slowmem_array_t ) )
         {
-            fidx = 0;
-            for (idx = 0; idx < sizeof(slmem);
-                    idx += sizeof(struct lpc_slowmem_array_t))
-                {
-                    if ((q->payload >= (void *) slmem[fidx].start) &&
-                            (q->payload <= (void *) slmem[fidx].end))
-                        {
-                            /* Needs copy */
-                            pcopy = 1;
-                        }
-                }
+            if ( ( q->payload >= ( void * ) slmem[fidx].start ) &&
+                    ( q->payload <= ( void * ) slmem[fidx].end ) )
+            {
+                /* Needs copy */
+                pcopy = 1;
+            }
+        }
+    }
+
+    if ( pcopy )
+    {
+        /* Create a new pbuf with the total pbuf size */
+        wp = pbuf_alloc( PBUF_RAW, ( u16_t ) EMAC_ETH_MAX_FLEN, PBUF_RAM );
+
+        if ( !wp )
+        {
+            /* Exit with error */
+            return ERR_MEM;
         }
 
-    if (pcopy)
+        /* Copy pbuf */
+        dst = ( u8_t * ) wp->payload;
+        wp->tot_len = 0;
+
+        for ( q = p; q != NULL; q = q->next )
         {
-            /* Create a new pbuf with the total pbuf size */
-            wp = pbuf_alloc(PBUF_RAW, (u16_t) EMAC_ETH_MAX_FLEN, PBUF_RAM);
-            if (!wp)
-                {
-                    /* Exit with error */
-                    return ERR_MEM;
-                }
-
-            /* Copy pbuf */
-            dst = (u8_t *) wp->payload;
-            wp->tot_len = 0;
-            for (q = p; q != NULL; q = q->next)
-                {
-                    MEMCPY(dst, (u8_t *) q->payload, q->len);
-                    dst += q->len;
-                    wp->tot_len += q->len;
-                }
-            wp->len = wp->tot_len;
-
-            /* LWIP will free original pbuf on exit of function */
-
-            p = sendp = wp;
+            MEMCPY( dst, ( u8_t * ) q->payload, q->len );
+            dst += q->len;
+            wp->tot_len += q->len;
         }
+
+        wp->len = wp->tot_len;
+
+        /* LWIP will free original pbuf on exit of function */
+
+        p = sendp = wp;
+    }
+
 #endif
 
     /* Zero-copy TX buffers may be fragmented across mutliple payload
        chains. Determine the number of descriptors needed for the
        transfer. The pbuf chaining can be a mess! */
-    dn = (u32_t) pbuf_clen(p);
+    dn = ( u32_t ) pbuf_clen( p );
 
     /* Wait until enough descriptors are available for the transfer. */
     /* THIS WILL BLOCK UNTIL THERE ARE ENOUGH DESCRIPTORS AVAILABLE */
-    while (dn > lpc_tx_ready(netif))
+    while ( dn > lpc_tx_ready( netif ) )
 #if NO_SYS == 0
-        {
-            xSemaphoreTake(lpc_netifdata->xTXDCountSem, 0);
-        }
+    {
+        xSemaphoreTake( lpc_netifdata->xTXDCountSem, 0 );
+    }
+
 #else
-        {
-            msDelay(1);
-        }
+    {
+        msDelay( 1 );
+    }
 #endif
 
     /* Get the next free descriptor index */
@@ -461,86 +478,90 @@ static err_t lpc_low_level_output(struct netif *netif, struct pbuf *sendp)
 
 #if NO_SYS == 0
     /* Get exclusive access */
-    sys_mutex_lock(&lpc_netifdata->TXLockMutex);
+    sys_mutex_lock( &lpc_netifdata->TXLockMutex );
 #endif
 
     /* Fill in the next free descriptor(s) */
-    while (dn > 0)
+    while ( dn > 0 )
+    {
+        dn--;
+
+        /* Setup packet address and length */
+        lpc_netifdata->ptdesc[idx].B1ADD = ( u32_t ) p->payload;
+        lpc_netifdata->ptdesc[idx].BSIZE = ( u32_t ) TDES_ENH_BS1( p->len );
+
+        /* Save pointer to pbuf so we can reclain the memory for
+           the pbuf after the buffer has been sent. Only the first
+           pbuf in a chain is saved since the full chain doesn't
+           need to be freed. */
+        /* For first packet only, first flag */
+        lpc_netifdata->tx_free_descs--;
+
+        if ( idx == fidx )
         {
-            dn--;
-
-            /* Setup packet address and length */
-            lpc_netifdata->ptdesc[idx].B1ADD = (u32_t) p->payload;
-            lpc_netifdata->ptdesc[idx].BSIZE = (u32_t) TDES_ENH_BS1(p->len);
-
-            /* Save pointer to pbuf so we can reclain the memory for
-               the pbuf after the buffer has been sent. Only the first
-               pbuf in a chain is saved since the full chain doesn't
-               need to be freed. */
-            /* For first packet only, first flag */
-            lpc_netifdata->tx_free_descs--;
-            if (idx == fidx)
-                {
-                    lpc_netifdata->ptdesc[idx].CTRLSTAT |= TDES_ENH_FS;
+            lpc_netifdata->ptdesc[idx].CTRLSTAT |= TDES_ENH_FS;
 #if LPC_CHECK_SLOWMEM == 1
-                    /* If this is a copied pbuf, then avoid getting the extra reference
-                       or the TX reclaim will be off by 1 */
-                    if (!pcopy)
-                        {
-                            pbuf_ref(p);
-                        }
+
+            /* If this is a copied pbuf, then avoid getting the extra reference
+               or the TX reclaim will be off by 1 */
+            if ( !pcopy )
+            {
+                pbuf_ref( p );
+            }
+
 #else
-                    /* Increment reference count on this packet so LWIP doesn't
-                       attempt to free it on return from this call */
-                    pbuf_ref(p);
+            /* Increment reference count on this packet so LWIP doesn't
+               attempt to free it on return from this call */
+            pbuf_ref( p );
 #endif
-                }
-            else
-                {
-                    lpc_netifdata->ptdesc[idx].CTRLSTAT |= TDES_OWN;
-                }
-
-            /* Save address of pbuf, but make sure it's associated with the
-               first chained pbuf so it gets freed once all pbuf chains are
-               transferred. */
-            if (!dn)
-                {
-                    lpc_netifdata->txpbufs[idx] = sendp;
-                }
-            else
-                {
-                    lpc_netifdata->txpbufs[idx] = NULL;
-                }
-
-            /* For last packet only, interrupt and last flag */
-            if (dn == 0)
-                {
-                    lpc_netifdata->ptdesc[idx].CTRLSTAT |= TDES_ENH_LS |
-                                                           TDES_ENH_IC;
-                }
-
-            /* IP checksumming requires full buffering in IP */
-            lpc_netifdata->ptdesc[idx].CTRLSTAT |= TDES_ENH_CIC(3);
-
-            LWIP_DEBUGF(EMAC_DEBUG | LWIP_DBG_TRACE,
-                        ("lpc_low_level_output: pbuf packet %p sent, chain %d,"
-                         " size %d, index %d, free %d\n", p, dn, p->len, idx,
-                         lpc_netifdata->tx_free_descs));
-
-            /* Update next available descriptor */
-            idx++;
-            if (idx >= LPC_NUM_BUFF_TXDESCS)
-                {
-                    idx = 0;
-                }
-
-            /* Next packet fragment */
-            p = p->next;
         }
+        else
+        {
+            lpc_netifdata->ptdesc[idx].CTRLSTAT |= TDES_OWN;
+        }
+
+        /* Save address of pbuf, but make sure it's associated with the
+           first chained pbuf so it gets freed once all pbuf chains are
+           transferred. */
+        if ( !dn )
+        {
+            lpc_netifdata->txpbufs[idx] = sendp;
+        }
+        else
+        {
+            lpc_netifdata->txpbufs[idx] = NULL;
+        }
+
+        /* For last packet only, interrupt and last flag */
+        if ( dn == 0 )
+        {
+            lpc_netifdata->ptdesc[idx].CTRLSTAT |= TDES_ENH_LS |
+                                                   TDES_ENH_IC;
+        }
+
+        /* IP checksumming requires full buffering in IP */
+        lpc_netifdata->ptdesc[idx].CTRLSTAT |= TDES_ENH_CIC( 3 );
+
+        LWIP_DEBUGF( EMAC_DEBUG | LWIP_DBG_TRACE,
+                     ( "lpc_low_level_output: pbuf packet %p sent, chain %d,"
+                       " size %d, index %d, free %d\n", p, dn, p->len, idx,
+                       lpc_netifdata->tx_free_descs ) );
+
+        /* Update next available descriptor */
+        idx++;
+
+        if ( idx >= LPC_NUM_BUFF_TXDESCS )
+        {
+            idx = 0;
+        }
+
+        /* Next packet fragment */
+        p = p->next;
+    }
 
     lpc_netifdata->tx_fill_idx = idx;
 
-    LINK_STATS_INC(link.xmit);
+    LINK_STATS_INC( link.xmit );
 
     /* Give first descriptor to DMA to start transfer */
     lpc_netifdata->ptdesc[fidx].CTRLSTAT |= TDES_OWN;
@@ -550,7 +571,7 @@ static err_t lpc_low_level_output(struct netif *netif, struct pbuf *sendp)
 
 #if NO_SYS == 0
     /* Restore access */
-    sys_mutex_unlock(&lpc_netifdata->TXLockMutex);
+    sys_mutex_unlock( &lpc_netifdata->TXLockMutex );
 #endif
 
     return ERR_OK;
@@ -558,14 +579,14 @@ static err_t lpc_low_level_output(struct netif *netif, struct pbuf *sendp)
 
 /* This function is the ethernet packet send function. It calls
    etharp_output after checking link status */
-static err_t lpc_etharp_output(struct netif *netif, struct pbuf *q,
-                               const ip_addr_t *ipaddr)
+static err_t lpc_etharp_output( struct netif *netif, struct pbuf *q,
+                                const ip_addr_t *ipaddr )
 {
     /* Only send packet is link is up */
-    if (netif->flags & NETIF_FLAG_LINK_UP)
-        {
-            return etharp_output(netif, q, ipaddr);
-        }
+    if ( netif->flags & NETIF_FLAG_LINK_UP )
+    {
+        return etharp_output( netif, q, ipaddr );
+    }
 
     return ERR_CONN;
 }
@@ -574,62 +595,62 @@ static err_t lpc_etharp_output(struct netif *netif, struct pbuf *q,
 /* Packet reception task
    This task is called when a packet is received. It will
    pass the packet to the LWIP core */
-static void vPacketReceiveTask(void *pvParameters)
+static void vPacketReceiveTask( void *pvParameters )
 {
     struct lpc_enetdata *lpc_netifdata = pvParameters;
 
-    while (1)
-        {
-            /* Wait for receive task to wakeup */
-            sys_arch_sem_wait(&lpc_netifdata->RxSem, 0);
+    while ( 1 )
+    {
+        /* Wait for receive task to wakeup */
+        sys_arch_sem_wait( &lpc_netifdata->RxSem, 0 );
 
-            /* Process receive packets */
-            while (!(lpc_netifdata->prdesc[lpc_netifdata->rx_get_idx].STATUS
-                     & RDES_OWN))
-                {
-                    lpc_enetif_input(lpc_netifdata->netif);
-                }
+        /* Process receive packets */
+        while ( !( lpc_netifdata->prdesc[lpc_netifdata->rx_get_idx].STATUS
+                   & RDES_OWN ) )
+        {
+            lpc_enetif_input( lpc_netifdata->netif );
         }
+    }
 }
 
 /* Transmit cleanup task
    This task is called when a transmit interrupt occurs and
    reclaims the pbuf and descriptor used for the packet once
    the packet has been transferred */
-static void vTransmitCleanupTask(void *pvParameters)
+static void vTransmitCleanupTask( void *pvParameters )
 {
     struct lpc_enetdata *lpc_netifdata = pvParameters;
 
-    while (1)
-        {
-            /* Wait for transmit cleanup task to wakeup */
-            sys_arch_sem_wait(&lpc_netifdata->TxCleanSem, 0);
+    while ( 1 )
+    {
+        /* Wait for transmit cleanup task to wakeup */
+        sys_arch_sem_wait( &lpc_netifdata->TxCleanSem, 0 );
 
-            /* Free TX pbufs and descriptors that are done */
-            lpc_tx_reclaim(lpc_netifdata->netif);
-        }
+        /* Free TX pbufs and descriptors that are done */
+        lpc_tx_reclaim( lpc_netifdata->netif );
+    }
 }
 #endif
 
 /* Low level init of the MAC and PHY */
-static err_t low_level_init(struct netif *netif)
+static err_t low_level_init( struct netif *netif )
 {
     struct lpc_enetdata *lpc_netifdata = netif->state;
 
     /* Initialize via Chip ENET function */
-    Chip_ENET_Init(LPC_ETHERNET,BOARD_ENET_PHY_ADDR);
+    Chip_ENET_Init( LPC_ETHERNET, BOARD_ENET_PHY_ADDR );
 
     /* WARNING: The 4 is a magic number that is dependent on the 204MHz System Clock */
-    Chip_ENET_SetupMII(LPC_ETHERNET, 4, BOARD_ENET_PHY_ADDR);
+    Chip_ENET_SetupMII( LPC_ETHERNET, 4, BOARD_ENET_PHY_ADDR );
 
     /* Save MAC address */
-    Chip_ENET_SetADDR(LPC_ETHERNET, netif->hwaddr);
+    Chip_ENET_SetADDR( LPC_ETHERNET, netif->hwaddr );
 
     /* Initial MAC configuration for checksum offload, full duplex,
        100Mbps, disable receive own in half duplex, inter-frame gap
        of 64-bits */
-    LPC_ETHERNET->MAC_CONFIG = MAC_CFG_BL(0) | MAC_CFG_IPC | MAC_CFG_DM |
-                               MAC_CFG_DO | MAC_CFG_FES | MAC_CFG_PS | MAC_CFG_IFG(3);
+    LPC_ETHERNET->MAC_CONFIG = MAC_CFG_BL( 0 ) | MAC_CFG_IPC | MAC_CFG_DM |
+                               MAC_CFG_DO | MAC_CFG_FES | MAC_CFG_PS | MAC_CFG_IFG( 3 );
 
     /* Setup filter */
 #if IP_SOF_BROADCAST_RECV
@@ -640,39 +661,42 @@ static err_t low_level_init(struct netif *netif)
 
     /* Initialize the PHY */
 #if defined(USE_RMII)
-    if (lpc_phy_init(true, msDelay) != SUCCESS)
-        {
-            return ERROR;
-        }
+
+    if ( lpc_phy_init( true, msDelay ) != SUCCESS )
+    {
+        return ERROR;
+    }
 
     intMask = RDES_CE | RDES_DE | RDES_RE | RDES_RWT | RDES_LC | RDES_OE |
               RDES_SAF | RDES_AFM;
 #else
-    if (lpc_phy_init(false, msDelay) != SUCCESS)
-        {
-            return ERROR;
-        }
+
+    if ( lpc_phy_init( false, msDelay ) != SUCCESS )
+    {
+        return ERROR;
+    }
 
     intMask = RDES_CE | RDES_RE | RDES_RWT | RDES_LC | RDES_OE | RDES_SAF |
               RDES_AFM;
 #endif
 
     /* Setup transmit and receive descriptors */
-    if (lpc_tx_setup(lpc_netifdata) != ERR_OK)
-        {
-            return ERR_BUF;
-        }
-    if (lpc_rx_setup(lpc_netifdata) != ERR_OK)
-        {
-            return ERR_BUF;
-        }
+    if ( lpc_tx_setup( lpc_netifdata ) != ERR_OK )
+    {
+        return ERR_BUF;
+    }
+
+    if ( lpc_rx_setup( lpc_netifdata ) != ERR_OK )
+    {
+        return ERR_BUF;
+    }
 
     /* Flush transmit FIFO */
     LPC_ETHERNET->DMA_OP_MODE = DMA_OM_FTF;
 
     /* Setup DMA to flush receive FIFOs at 32 bytes, service TX FIFOs at
        64 bytes */
-    LPC_ETHERNET->DMA_OP_MODE |= DMA_OM_RTC(1) | DMA_OM_TTC(0);
+    LPC_ETHERNET->DMA_OP_MODE |= DMA_OM_RTC( 1 ) | DMA_OM_TTC( 0 );
 
     /* Clear all MAC interrupts */
     LPC_ETHERNET->DMA_STAT = DMA_ST_ALL;
@@ -680,10 +704,10 @@ static err_t low_level_init(struct netif *netif)
     /* Enable MAC interrupts */
     LPC_ETHERNET->DMA_INT_EN =
 #if NO_SYS == 1
-        0;
+                0;
 #else
-        DMA_IE_TIE | DMA_IE_OVE | DMA_IE_UNE | DMA_IE_RIE | DMA_IE_NIE |
-        DMA_IE_AIE | DMA_IE_TUE | DMA_IE_RUE;
+                DMA_IE_TIE | DMA_IE_OVE | DMA_IE_UNE | DMA_IE_RIE | DMA_IE_NIE |
+                DMA_IE_AIE | DMA_IE_TUE | DMA_IE_RUE;
 #endif
 
     /* Enable receive and transmit DMA processes */
@@ -701,15 +725,15 @@ static err_t low_level_init(struct netif *netif)
 /*****************************************************************************
  * Public functions
  ****************************************************************************/
-void msDelay(uint32_t ms)
+void msDelay( uint32_t ms )
 
 {
-    vTaskDelay(MILLIS_TO_TICKS(ms));
+    vTaskDelay( MILLIS_TO_TICKS( ms ) );
 }
 
 
 /* Attempt to allocate and requeue a new pbuf for RX */
-s32_t lpc_rx_queue(struct netif *netif)
+s32_t lpc_rx_queue( struct netif *netif )
 {
     struct lpc_enetdata *lpc_netifdata = netif->state;
     struct pbuf *p;
@@ -717,81 +741,85 @@ s32_t lpc_rx_queue(struct netif *netif)
     s32_t queued = 0;
 
     /* Attempt to requeue as many packets as possible */
-    while (lpc_netifdata->rx_free_descs > 0)
+    while ( lpc_netifdata->rx_free_descs > 0 )
+    {
+        /* Allocate a pbuf from the pool. We need to allocate at the
+           maximum size as we don't know the size of the yet to be
+           received packet. */
+        p = pbuf_alloc( PBUF_RAW, ( u16_t ) EMAC_ETH_MAX_FLEN, PBUF_RAM );
+
+        if ( p == NULL )
         {
-            /* Allocate a pbuf from the pool. We need to allocate at the
-               maximum size as we don't know the size of the yet to be
-               received packet. */
-            p = pbuf_alloc(PBUF_RAW, (u16_t) EMAC_ETH_MAX_FLEN, PBUF_RAM);
-            if (p == NULL)
-                {
-                    LWIP_DEBUGF(EMAC_DEBUG | LWIP_DBG_TRACE,
-                                ("lpc_rx_queue: could not allocate RX pbuf index %d, "
-                                 "free %d)\n", lpc_netifdata->rx_next_idx,
-                                 lpc_netifdata->rx_free_descs));
-                    return queued;
-                }
-
-            /* pbufs allocated from the RAM pool should be non-chained (although
-               the hardware will allow chaining) */
-            LWIP_ASSERT("lpc_rx_queue: pbuf is not contiguous (chained)",
-                        pbuf_clen(p) <= 1);
-
-            /* Queue packet */
-            lpc_rxqueue_pbuf(lpc_netifdata, p);
-
-            /* Update queued count */
-            queued++;
+            LWIP_DEBUGF( EMAC_DEBUG | LWIP_DBG_TRACE,
+                         ( "lpc_rx_queue: could not allocate RX pbuf index %d, "
+                           "free %d)\n", lpc_netifdata->rx_next_idx,
+                           lpc_netifdata->rx_free_descs ) );
+            return queued;
         }
+
+        /* pbufs allocated from the RAM pool should be non-chained (although
+           the hardware will allow chaining) */
+        LWIP_ASSERT( "lpc_rx_queue: pbuf is not contiguous (chained)",
+                     pbuf_clen( p ) <= 1 );
+
+        /* Queue packet */
+        lpc_rxqueue_pbuf( lpc_netifdata, p );
+
+        /* Update queued count */
+        queued++;
+    }
 
     return queued;
 }
 
 /* Attempt to read a packet from the EMAC interface */
-void lpc_enetif_input(struct netif *netif)
+void lpc_enetif_input( struct netif *netif )
 {
     struct eth_hdr *ethhdr;
 
     struct pbuf *p;
 
     /* move received packet into a new pbuf */
-    p = lpc_low_level_input(netif);
-    if (p == NULL)
-        {
-            return;
-        }
+    p = lpc_low_level_input( netif );
+
+    if ( p == NULL )
+    {
+        return;
+    }
 
     /* points to packet payload, which starts with an Ethernet header */
     ethhdr = p->payload;
 
-    switch (htons(ethhdr->type))
-        {
-            case ETHTYPE_IP:
-            case ETHTYPE_ARP:
+    switch ( htons( ethhdr->type ) )
+    {
+        case ETHTYPE_IP:
+        case ETHTYPE_ARP:
 #if PPPOE_SUPPORT
-            case ETHTYPE_PPPOEDISC:
-            case ETHTYPE_PPPOE:
+        case ETHTYPE_PPPOEDISC:
+        case ETHTYPE_PPPOE:
 #endif /* PPPOE_SUPPORT */
-                /* full packet send to tcpip_thread to process */
-                if (netif->input(p, netif) != ERR_OK)
-                    {
-                        LWIP_DEBUGF(NETIF_DEBUG,
-                                    ("lpc_enetif_input: IP input error\n"));
 
-                        /* Free buffer */
-                        pbuf_free(p);
-                    }
-                break;
+            /* full packet send to tcpip_thread to process */
+            if ( netif->input( p, netif ) != ERR_OK )
+            {
+                LWIP_DEBUGF( NETIF_DEBUG,
+                             ( "lpc_enetif_input: IP input error\n" ) );
 
-            default:
-                /* Return buffer */
-                pbuf_free(p);
-                break;
-        }
+                /* Free buffer */
+                pbuf_free( p );
+            }
+
+            break;
+
+        default:
+            /* Return buffer */
+            pbuf_free( p );
+            break;
+    }
 }
 
 /* Call for freeing TX buffers that are complete */
-void lpc_tx_reclaim(struct netif *netif)
+void lpc_tx_reclaim( struct netif *netif )
 {
     struct lpc_enetdata *lpc_netifdata = netif->state;
     s32_t ridx;
@@ -799,80 +827,84 @@ void lpc_tx_reclaim(struct netif *netif)
 
 #if NO_SYS == 0
     /* Get exclusive access */
-    sys_mutex_lock(&lpc_netifdata->TXLockMutex);
+    sys_mutex_lock( &lpc_netifdata->TXLockMutex );
 #endif
 
     /* If a descriptor is available and is no longer owned by the
        hardware, it can be reclaimed */
     ridx = lpc_netifdata->tx_reclaim_idx;
-    while ((lpc_netifdata->tx_free_descs < LPC_NUM_BUFF_TXDESCS) &&
-            (!(lpc_netifdata->ptdesc[ridx].CTRLSTAT & TDES_OWN)))
+
+    while ( ( lpc_netifdata->tx_free_descs < LPC_NUM_BUFF_TXDESCS ) &&
+            ( !( lpc_netifdata->ptdesc[ridx].CTRLSTAT & TDES_OWN ) ) )
+    {
+        /* Peek at the status of the descriptor to determine if the
+           packet is good and any status information. */
+        status = lpc_netifdata->ptdesc[ridx].CTRLSTAT;
+
+        LWIP_DEBUGF( EMAC_DEBUG | LWIP_DBG_TRACE,
+                     ( "lpc_tx_reclaim: Reclaiming sent packet %p, index %d\n",
+                       lpc_netifdata->txpbufs[ridx], ridx ) );
+
+        /* Check TX error conditions */
+        if ( status & TDES_ES )
         {
-            /* Peek at the status of the descriptor to determine if the
-               packet is good and any status information. */
-            status = lpc_netifdata->ptdesc[ridx].CTRLSTAT;
-
-            LWIP_DEBUGF(EMAC_DEBUG | LWIP_DBG_TRACE,
-                        ("lpc_tx_reclaim: Reclaiming sent packet %p, index %d\n",
-                         lpc_netifdata->txpbufs[ridx], ridx));
-
-            /* Check TX error conditions */
-            if (status & TDES_ES)
-                {
-                    LWIP_DEBUGF(EMAC_DEBUG | LWIP_DBG_TRACE,
-                                ("lpc_tx_reclaim: TX error condition status 0x%x\n", status));
-                    LINK_STATS_INC(link.err);
+            LWIP_DEBUGF( EMAC_DEBUG | LWIP_DBG_TRACE,
+                         ( "lpc_tx_reclaim: TX error condition status 0x%x\n", status ) );
+            LINK_STATS_INC( link.err );
 
 #if LINK_STATS == 1
-                    /* Error conditions that cause a packet drop */
-                    if (status & (TDES_UF | TDES_ED | TDES_EC | TDES_LC))
-                        {
-                            LINK_STATS_INC(link.drop);
-                        }
+
+            /* Error conditions that cause a packet drop */
+            if ( status & ( TDES_UF | TDES_ED | TDES_EC | TDES_LC ) )
+            {
+                LINK_STATS_INC( link.drop );
+            }
+
 #endif
-                }
-
-            /* Reset control for this descriptor */
-            if (ridx == (LPC_NUM_BUFF_TXDESCS - 1))
-                {
-                    lpc_netifdata->ptdesc[ridx].CTRLSTAT = TDES_ENH_TCH |
-                                                           TDES_ENH_TER;
-                }
-            else
-                {
-                    lpc_netifdata->ptdesc[ridx].CTRLSTAT = TDES_ENH_TCH;
-                }
-
-            /* Free the pbuf associate with this descriptor */
-            if (lpc_netifdata->txpbufs[ridx])
-                {
-                    pbuf_free(lpc_netifdata->txpbufs[ridx]);
-                }
-
-            /* Reclaim this descriptor */
-            lpc_netifdata->tx_free_descs++;
-#if NO_SYS == 0
-            xSemaphoreGive(lpc_netifdata->xTXDCountSem);
-#endif
-            ridx++;
-            if (ridx >= LPC_NUM_BUFF_TXDESCS)
-                {
-                    ridx = 0;
-                }
         }
+
+        /* Reset control for this descriptor */
+        if ( ridx == ( LPC_NUM_BUFF_TXDESCS - 1 ) )
+        {
+            lpc_netifdata->ptdesc[ridx].CTRLSTAT = TDES_ENH_TCH |
+                                                   TDES_ENH_TER;
+        }
+        else
+        {
+            lpc_netifdata->ptdesc[ridx].CTRLSTAT = TDES_ENH_TCH;
+        }
+
+        /* Free the pbuf associate with this descriptor */
+        if ( lpc_netifdata->txpbufs[ridx] )
+        {
+            pbuf_free( lpc_netifdata->txpbufs[ridx] );
+        }
+
+        /* Reclaim this descriptor */
+        lpc_netifdata->tx_free_descs++;
+#if NO_SYS == 0
+        xSemaphoreGive( lpc_netifdata->xTXDCountSem );
+#endif
+        ridx++;
+
+        if ( ridx >= LPC_NUM_BUFF_TXDESCS )
+        {
+            ridx = 0;
+        }
+    }
 
     lpc_netifdata->tx_reclaim_idx = ridx;
 
 #if NO_SYS == 0
     /* Restore access */
-    sys_mutex_unlock(&lpc_netifdata->TXLockMutex);
+    sys_mutex_unlock( &lpc_netifdata->TXLockMutex );
 #endif
 }
 
 /* Polls if an available TX descriptor is ready */
-s32_t lpc_tx_ready(struct netif *netif)
+s32_t lpc_tx_ready( struct netif *netif )
 {
-    return ((struct lpc_enetdata *) netif->state)->tx_free_descs;
+    return ( ( struct lpc_enetdata * ) netif->state )->tx_free_descs;
 }
 
 /**
@@ -881,12 +913,12 @@ s32_t lpc_tx_ready(struct netif *netif)
  * @note    This function handles the transmit, receive, and error interrupt of
  * the LPC118xx/43xx. This is meant to be used when NO_SYS=0.
  */
-void ETH_IRQHandler(void)
+void ETH_IRQHandler( void )
 
 {
 #if NO_SYS == 1
     /* Interrupts are not used without an RTOS */
-    NVIC_DisableIRQ((IRQn_Type) ETHERNET_IRQn);
+    NVIC_DisableIRQ( ( IRQn_Type ) ETHERNET_IRQn );
 #else
     signed portBASE_TYPE xRecTaskWoken = pdFALSE, XTXTaskWoken = pdFALSE;
     uint32_t ints;
@@ -895,74 +927,74 @@ void ETH_IRQHandler(void)
     ints = LPC_ETHERNET->DMA_STAT;
 
     /* RX group interrupt(s) */
-    if (ints & (DMA_ST_RI | DMA_ST_OVF | DMA_ST_RU))
-        {
-            /* Give semaphore to wakeup RX receive task. Note the FreeRTOS
-               method is used instead of the LWIP arch method. */
-            xSemaphoreGiveFromISR(lpc_enetdata.RxSem, &xRecTaskWoken);
-        }
+    if ( ints & ( DMA_ST_RI | DMA_ST_OVF | DMA_ST_RU ) )
+    {
+        /* Give semaphore to wakeup RX receive task. Note the FreeRTOS
+           method is used instead of the LWIP arch method. */
+        xSemaphoreGiveFromISR( lpc_enetdata.RxSem, &xRecTaskWoken );
+    }
 
     /* TX group interrupt(s) */
-    if (ints & (DMA_ST_TI | DMA_ST_UNF | DMA_ST_TU))
-        {
-            /* Give semaphore to wakeup TX cleanup task. Note the FreeRTOS
-               method is used instead of the LWIP arch method. */
-            xSemaphoreGiveFromISR(lpc_enetdata.TxCleanSem, &XTXTaskWoken);
-        }
+    if ( ints & ( DMA_ST_TI | DMA_ST_UNF | DMA_ST_TU ) )
+    {
+        /* Give semaphore to wakeup TX cleanup task. Note the FreeRTOS
+           method is used instead of the LWIP arch method. */
+        xSemaphoreGiveFromISR( lpc_enetdata.TxCleanSem, &XTXTaskWoken );
+    }
 
     /* Clear pending interrupts */
     LPC_ETHERNET->DMA_STAT = ints;
 
     /* Context switch needed? */
-    portEND_SWITCHING_ISR(xRecTaskWoken || XTXTaskWoken);
+    portEND_SWITCHING_ISR( xRecTaskWoken || XTXTaskWoken );
 #endif
 }
 
 /* Set up the MAC interface duplex */
-void lpc_emac_set_duplex(int full_duplex)
+void lpc_emac_set_duplex( int full_duplex )
 {
-    if (full_duplex)
-        {
-            LPC_ETHERNET->MAC_CONFIG |= MAC_CFG_DM;
-        }
+    if ( full_duplex )
+    {
+        LPC_ETHERNET->MAC_CONFIG |= MAC_CFG_DM;
+    }
     else
-        {
-            LPC_ETHERNET->MAC_CONFIG &= ~MAC_CFG_DM;
-        }
+    {
+        LPC_ETHERNET->MAC_CONFIG &= ~MAC_CFG_DM;
+    }
 }
 
 /* Set up the MAC interface speed */
-void lpc_emac_set_speed(int mbs_100)
+void lpc_emac_set_speed( int mbs_100 )
 {
-    if (mbs_100)
-        {
-            LPC_ETHERNET->MAC_CONFIG |= MAC_CFG_FES;
-        }
+    if ( mbs_100 )
+    {
+        LPC_ETHERNET->MAC_CONFIG |= MAC_CFG_FES;
+    }
     else
-        {
-            LPC_ETHERNET->MAC_CONFIG &= ~MAC_CFG_FES;
-        }
+    {
+        LPC_ETHERNET->MAC_CONFIG &= ~MAC_CFG_FES;
+    }
 }
 
 /* LWIP 18xx/43xx EMAC initialization function */
-err_t lpc_enetif_init(struct netif *netif)
+err_t lpc_enetif_init( struct netif *netif )
 {
     err_t err;
 
-    LWIP_ASSERT("netif != NULL", (netif != NULL));
+    LWIP_ASSERT( "netif != NULL", ( netif != NULL ) );
 
     lpc_enetdata.netif = netif;
 
     /* set MAC hardware address - just mangle the chip serial number */
-    uint8_t *p=(uint8_t *)ConfigGetSerialNumber();
+    uint8_t *p = ( uint8_t * )ConfigGetSerialNumber();
 
-    netif->hwaddr[0]=((p[0]^p[15])&0xFE)
-                     |0x02; /* Make sure address is locally administered and not a multicast address */
-    netif->hwaddr[1]=p[1]^p[14];
-    netif->hwaddr[2]=p[2]^p[13]^p[9];
-    netif->hwaddr[3]=p[3]^p[12]^p[8];
-    netif->hwaddr[4]=p[4]^p[11]^p[7];
-    netif->hwaddr[5]=p[5]^p[10]^p[6];
+    netif->hwaddr[0] = ( ( p[0] ^ p[15] ) & 0xFE )
+                       | 0x02; /* Make sure address is locally administered and not a multicast address */
+    netif->hwaddr[1] = p[1] ^ p[14];
+    netif->hwaddr[2] = p[2] ^ p[13] ^ p[9];
+    netif->hwaddr[3] = p[3] ^ p[12] ^ p[8];
+    netif->hwaddr[4] = p[4] ^ p[11] ^ p[7];
+    netif->hwaddr[5] = p[5] ^ p[10] ^ p[6];
 
     netif->hwaddr_len = ETHARP_HWADDR_LEN;
 
@@ -975,11 +1007,12 @@ err_t lpc_enetif_init(struct netif *netif)
 
     /* Initialize the hardware */
     netif->state = &lpc_enetdata;
-    err = low_level_init(netif);
-    if (err != ERR_OK)
-        {
-            return err;
-        }
+    err = low_level_init( netif );
+
+    if ( err != ERR_OK )
+    {
+        return err;
+    }
 
 #if LWIP_NETIF_HOSTNAME
     /* Initialize interface hostname */
@@ -994,25 +1027,25 @@ err_t lpc_enetif_init(struct netif *netif)
 
     /* For FreeRTOS, start tasks */
 #if NO_SYS == 0
-    lpc_enetdata.xTXDCountSem = xSemaphoreCreateCounting(LPC_NUM_BUFF_TXDESCS,
-                                LPC_NUM_BUFF_TXDESCS);
-    LWIP_ASSERT("xTXDCountSem creation error",
-                (lpc_enetdata.xTXDCountSem != NULL));
+    lpc_enetdata.xTXDCountSem = xSemaphoreCreateCounting( LPC_NUM_BUFF_TXDESCS,
+                                LPC_NUM_BUFF_TXDESCS );
+    LWIP_ASSERT( "xTXDCountSem creation error",
+                 ( lpc_enetdata.xTXDCountSem != NULL ) );
 
-    err = sys_mutex_new(&lpc_enetdata.TXLockMutex);
-    LWIP_ASSERT("TXLockMutex creation error", (err == ERR_OK));
+    err = sys_mutex_new( &lpc_enetdata.TXLockMutex );
+    LWIP_ASSERT( "TXLockMutex creation error", ( err == ERR_OK ) );
 
     /* Packet receive task */
-    err = sys_sem_new(&lpc_enetdata.RxSem, 0);
-    LWIP_ASSERT("RxSem creation error", (err == ERR_OK));
-    sys_thread_new("TCP RX", vPacketReceiveTask, netif->state,
-                   DEFAULT_THREAD_STACKSIZE, tskRECPKT_PRIORITY);
+    err = sys_sem_new( &lpc_enetdata.RxSem, 0 );
+    LWIP_ASSERT( "RxSem creation error", ( err == ERR_OK ) );
+    sys_thread_new( "TCP RX", vPacketReceiveTask, netif->state,
+                    DEFAULT_THREAD_STACKSIZE, tskRECPKT_PRIORITY );
 
     /* Transmit cleanup task */
-    err = sys_sem_new(&lpc_enetdata.TxCleanSem, 0);
-    LWIP_ASSERT("TxCleanSem creation error", (err == ERR_OK));
-    sys_thread_new("TCP Cln", vTransmitCleanupTask, netif->state,
-                   DEFAULT_THREAD_STACKSIZE, tskTXCLEAN_PRIORITY);
+    err = sys_sem_new( &lpc_enetdata.TxCleanSem, 0 );
+    LWIP_ASSERT( "TxCleanSem creation error", ( err == ERR_OK ) );
+    sys_thread_new( "TCP Cln", vTransmitCleanupTask, netif->state,
+                    DEFAULT_THREAD_STACKSIZE, tskTXCLEAN_PRIORITY );
 #endif
 
     return ERR_OK;

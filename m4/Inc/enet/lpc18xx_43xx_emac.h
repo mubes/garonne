@@ -36,8 +36,7 @@
 #include "lwip/netif.h"
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /** @defgroup NET_LWIP_LPC18XX43XX_EMAC_DRIVER 18xx/43xx EMAC driver for LWIP
@@ -58,14 +57,14 @@ extern "C"
  * @param   netif   : lwip network interface structure pointer
  * @return  Nothing
  */
-void lpc_enetif_input(struct netif *netif);
+void lpc_enetif_input( struct netif *netif );
 
 /**
  * @brief   Attempt to allocate and requeue a new pbuf for RX
  * @param   netif   : lwip network interface structure pointer
  * @return  The number of new descriptors queued
  */
-s32_t lpc_rx_queue(struct netif *netif);
+s32_t lpc_rx_queue( struct netif *netif );
 
 /**
  * @brief   Polls if an available TX descriptor is ready
@@ -73,14 +72,14 @@ s32_t lpc_rx_queue(struct netif *netif);
  * @return  0 if no descriptors are read, or >0
  * @note    Can be used to determine if the low level transmit function will block
  */
-s32_t lpc_tx_ready(struct netif *netif);
+s32_t lpc_tx_ready( struct netif *netif );
 
 /**
  * @brief   Call for freeing TX buffers that are complete
  * @param   netif   : lwip network interface structure pointer
  * @return  Nothing
  */
-void lpc_tx_reclaim(struct netif *netif);
+void lpc_tx_reclaim( struct netif *netif );
 
 /**
  * @brief   LWIP 18xx/43xx EMAC initialization function
@@ -90,7 +89,7 @@ void lpc_tx_reclaim(struct netif *netif);
  * network interface. This function should be passed as a parameter to
  * netif_add().
  */
-err_t lpc_enetif_init(struct netif *netif);
+err_t lpc_enetif_init( struct netif *netif );
 
 /**
  * @brief   Set up the MAC interface duplex
@@ -99,7 +98,7 @@ err_t lpc_enetif_init(struct netif *netif);
  * @note    This function provides a method for the PHY to setup the EMAC
  * for the PHY negotiated duplex mode.
  */
-void lpc_emac_set_duplex(int full_duplex);
+void lpc_emac_set_duplex( int full_duplex );
 
 /**
  * @brief   Set up the MAC interface speed
@@ -108,14 +107,14 @@ void lpc_emac_set_duplex(int full_duplex);
  * @note    This function provides a method for the PHY to setup the EMAC
  * for the PHY negotiated bit rate.
  */
-void lpc_emac_set_speed(int mbs_100);
+void lpc_emac_set_speed( int mbs_100 );
 
 /**
  * @brief   Millisecond Delay function
  * @param   ms      : Milliseconds to wait
  * @return  None
  */
-extern void msDelay(uint32_t ms);
+extern void msDelay( uint32_t ms );
 
 #ifdef __cplusplus
 }

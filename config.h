@@ -229,6 +229,8 @@ extern void dbgprint(char *fmt, ...);
 #define __RAMFUNC_EXT(bank, name) __SECTION_EXT(ramfunc, bank, name)
 #define __RAMFUNC(bank) __SECTION(ramfunc, bank)
 
+// Number of columns that can be input
+#define TERM_COLS 80
 
 // ============================================================================================
 // ============================================================================================

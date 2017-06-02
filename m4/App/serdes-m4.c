@@ -54,7 +54,7 @@ static struct
     uint8_t *dwp;
     uint8_t sum;
     enum serdesState s;
-    EVENT_CB(*cb);
+    EVENT_CB( *cb );
 } _s;
 
 // ============================================================================================
@@ -64,83 +64,99 @@ static struct
 // ============================================================================================
 // ============================================================================================
 // ============================================================================================
-uint8_t _sum(uint8_t *d, uint32_t len)
+uint8_t _sum( uint8_t *d, uint32_t len )
 
 {
-    uint8_t s=0;
-    while (len--) s+=*d++;
+    uint8_t s = 0;
+
+    while ( len-- )
+    {
+        s += *d++;
+    }
+
     return s;
 }
 // ============================================================================================
-void _processPacket(void)
+void _processPacket( void )
 
 {
-    if (_s.dwp!=_s.data)
+    if ( _s.dwp != _s.data )
     {
         /* This is a packet with length associated - check it's OK */
-        uint8_t calcSum = _sum(_s.data,(_s.dwp-_s.data));
-        if (calcSum!=_s.sum)
+        uint8_t calcSum = _sum( _s.data, ( _s.dwp - _s.data ) );
+
+        if ( calcSum != _s.sum )
         {
             return;
         }
     }
-    _s.cb(_s.target);
+
+    _s.cb( _s.target );
 }
 // ============================================================================================
-void _protocolPump(uint8_t c)
+void _protocolPump( uint8_t c )
 
 {
-    switch (_s.s)
+    switch ( _s.s )
     {
         case SD_WAIT_HEADER:
-            if (SD_HEADER!=c)
+            if ( SD_HEADER != c )
             {
                 break;
             }
+
             _s.s = SD_WAIT_TARGET_H;
             break;
-            // --------------------------
+
+        // --------------------------
         case SD_WAIT_TARGET_H:
-        _s.target=c<<8;
-        _s.s = SD_WAIT_TARGET_L;
-        break;
+            _s.target = c << 8;
+            _s.s = SD_WAIT_TARGET_L;
+            break;
+
         // --------------------------
         case SD_WAIT_TARGET_L:
-        _s.target|=c;
-        _s.s = SD_WAIT_LEN;
-        break;
+            _s.target |= c;
+            _s.s = SD_WAIT_LEN;
+            break;
+
         // --------------------------
         case SD_WAIT_LEN:
-            if (c>MAX_PACKET_LEN)
+            if ( c > MAX_PACKET_LEN )
             {
                 _s.s = SD_WAIT_HEADER;
                 break;
             }
-            _s.rxLen=c;
-            _s.dwp=_s.data;
-            if (c)
-                {
-                    _s.s = SD_DATA;
-                }
+
+            _s.rxLen = c;
+            _s.dwp = _s.data;
+
+            if ( c )
+            {
+                _s.s = SD_DATA;
+            }
             else
             {
                 _s.s = SD_WAIT_HEADER;
                 _processPacket();
 
             }
+
             break;
-            // --------------------------
-            case SD_DATA:
-                *_s.dwp++=c;
 
-                if (--_s.rxLen)
-                {
-                    break;
-                }
-                _s.s = SD_WAIT_CRC;
+        // --------------------------
+        case SD_DATA:
+            *_s.dwp++ = c;
+
+            if ( --_s.rxLen )
+            {
                 break;
+            }
 
-            // --------------------------
+            _s.s = SD_WAIT_CRC;
+            break;
+
+        // --------------------------
         case SD_WAIT_CRC:
             _s.sum = c;
             _s.s = SD_WAIT_HEADER;
@@ -156,70 +172,73 @@ void _protocolPump(uint8_t c)
 // ============================================================================================
 // ============================================================================================
 // ============================================================================================
-uint32_t serdesTarget(enum ipc port)
+uint32_t serdesTarget( enum ipc port )
 
 {
     return _s.target;
 }
 // ============================================================================================
-uint32_t serdesLen(enum ipc port)
+uint32_t serdesLen( enum ipc port )
 
 {
-    return _s.dwp-_s.data;
+    return _s.dwp - _s.data;
 }
 // ============================================================================================
-uint8_t *serdesData(enum ipc port)
+uint8_t *serdesData( enum ipc port )
 
 {
     return _s.data;
 }
 // ============================================================================================
-void serdesReceive(enum ipc port)
+void serdesReceive( enum ipc port )
 
 {
-    while (ipcDataPending(_s.port))
+    while ( ipcDataPending( _s.port ) )
     {
-        _protocolPump(ipcGetRx(_s.port));
+        _protocolPump( ipcGetRx( _s.port ) );
     }
 }
 // ============================================================================================
-BOOL serdesSend(uint32_t target, uint8_t len, uint8_t *data)
+BOOL serdesSend( uint32_t target, uint8_t len, uint8_t *data )
 
 {
-    uint8_t s=SD_HEADER;
-    target|=MSG_SEQ(_s.seq++);
-    uint8_t *targetTx=(uint8_t[]){(target>>8)&0xFF,target&0xFF};
+    uint8_t s = SD_HEADER;
+    target |= MSG_SEQ( _s.seq++ );
+    uint8_t *targetTx = ( uint8_t[] )
+    {
+        ( target >> 8 ) & 0xFF, target & 0xFF
+    };
 
-    if (!ipcTxRoomCheck(_s.port,len+PROTOCOL_OVERHEAD_LENGTH))
+    if ( !ipcTxRoomCheck( _s.port, len + PROTOCOL_OVERHEAD_LENGTH ) )
     {
         /* There isn't room for this message .... just make sure the other end knows there's stuff waiting */
         ipcAlertFarEnd();
         return FALSE;
     }
 
-    ipcTx(_s.port,&s,1);
-    ipcTx(_s.port,targetTx,2);
-    ipcTx(_s.port,&len,1);
-    if (len)
+    ipcTx( _s.port, &s, 1 );
+    ipcTx( _s.port, targetTx, 2 );
+    ipcTx( _s.port, &len, 1 );
+
+    if ( len )
     {
-        ipcTx(_s.port, data, len);
-        s =_sum(data,len);
-        ipcTx(_s.port,&s,1);
+        ipcTx( _s.port, data, len );
+        s = _sum( data, len );
+        ipcTx( _s.port, &s, 1 );
     }
+
     ipcAlertFarEnd();
 
     return TRUE;
 }
 
 // ============================================================================================
-void serdesInit(enum ipc port, EVENT_CB(*cb_set))
+void serdesInit( enum ipc port, EVENT_CB( *cb_set ) )
 
 {
     _s.port = port;
-    _s.cb=cb_set;
-    _s.s=SD_WAIT_HEADER;
-    ipcOpenPort(port);
+    _s.cb = cb_set;
+    _s.s = SD_WAIT_HEADER;
+    ipcOpenPort( port );
 }
-// ============================================================================================
-// ============================================================================================
 // ============================================================================================

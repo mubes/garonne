@@ -86,105 +86,105 @@ static p_msDelay_func_t pDelayMs;
 
 /* Write to the PHY. Will block for delays based on the pDelayMs function. Returns
    true on success, or false on failure */
-static Status lpc_mii_write(uint8_t reg, uint16_t data)
+static Status lpc_mii_write( uint8_t reg, uint16_t data )
 {
     Status sts = ERROR;
     int32_t mst = 250;
 
     /* Write value for register */
-    Chip_ENET_StartMIIWrite(LPC_ETHERNET, reg, data);
+    Chip_ENET_StartMIIWrite( LPC_ETHERNET, reg, data );
 
     /* Wait for unbusy status */
-    while (mst > 0)
+    while ( mst > 0 )
+    {
+        if ( Chip_ENET_IsMIIBusy( LPC_ETHERNET ) )
         {
-            if (Chip_ENET_IsMIIBusy(LPC_ETHERNET))
-                {
-                    mst--;
-                    pDelayMs(1);
-                }
-            else
-                {
-                    mst = 0;
-                    sts = SUCCESS;
-                }
+            mst--;
+            pDelayMs( 1 );
         }
+        else
+        {
+            mst = 0;
+            sts = SUCCESS;
+        }
+    }
 
     return sts;
 }
 
 /* Read from the PHY. Will block for delays based on the pDelayMs function. Returns
    true on success, or false on failure */
-static Status lpc_mii_read(uint8_t reg, uint16_t *data)
+static Status lpc_mii_read( uint8_t reg, uint16_t *data )
 {
     Status sts = ERROR;
     int32_t mst = 250;
 
     /* Start register read */
-    Chip_ENET_StartMIIRead(LPC_ETHERNET, reg);
+    Chip_ENET_StartMIIRead( LPC_ETHERNET, reg );
 
     /* Wait for unbusy status */
-    while (mst > 0)
+    while ( mst > 0 )
+    {
+        if ( !Chip_ENET_IsMIIBusy( LPC_ETHERNET ) )
         {
-            if (!Chip_ENET_IsMIIBusy(LPC_ETHERNET))
-                {
-                    mst = 0;
-                    *data = Chip_ENET_ReadMIIData(LPC_ETHERNET);
-                    sts = SUCCESS;
-                }
-            else
-                {
-                    mst--;
-                    pDelayMs(1);
-                }
+            mst = 0;
+            *data = Chip_ENET_ReadMIIData( LPC_ETHERNET );
+            sts = SUCCESS;
         }
+        else
+        {
+            mst--;
+            pDelayMs( 1 );
+        }
+    }
 
     return sts;
 }
 
 /* Update PHY status from passed value */
-static void lpc_update_phy_sts(uint16_t linksts)
+static void lpc_update_phy_sts( uint16_t linksts )
 {
     /* Update link active status */
-    if (linksts & KSZ_LINK_STATUS)
-        {
-            physts |= PHY_LINK_CONNECTED;
-        }
+    if ( linksts & KSZ_LINK_STATUS )
+    {
+        physts |= PHY_LINK_CONNECTED;
+    }
     else
-        {
-            physts &= ~PHY_LINK_CONNECTED;
-        }
+    {
+        physts &= ~PHY_LINK_CONNECTED;
+    }
 
     /* Full or half duplex */
-    if ((linksts & KSZ_100MB_FULL_DUPLEX) || (linksts & KSZ_10MB_FULL_DUPLEX))
-        {
-            physts |= PHY_LINK_FULLDUPLX;
-        }
+    if ( ( linksts & KSZ_100MB_FULL_DUPLEX ) || ( linksts & KSZ_10MB_FULL_DUPLEX ) )
+    {
+        physts |= PHY_LINK_FULLDUPLX;
+    }
     else
-        {
-            physts &= ~PHY_LINK_FULLDUPLX;
-        }
+    {
+        physts &= ~PHY_LINK_FULLDUPLX;
+    }
 
     /* Configure 100MBit/10MBit mode. */
-    if ((linksts & KSZ_100MB_HALF_DUPLEX) || (linksts & KSZ_100MB_FULL_DUPLEX))
-        {
-            physts |= PHY_LINK_SPEED100;
-        }
+    if ( ( linksts & KSZ_100MB_HALF_DUPLEX ) || ( linksts & KSZ_100MB_FULL_DUPLEX ) )
+    {
+        physts |= PHY_LINK_SPEED100;
+    }
     else
-        {
-            physts &= ~PHY_LINK_SPEED100;
-        }
+    {
+        physts &= ~PHY_LINK_SPEED100;
+    }
 
     /* If the status has changed, indicate via change flag */
-    if ((physts & (PHY_LINK_SPEED100 | PHY_LINK_FULLDUPLX | PHY_LINK_CONNECTED)) !=
-            (olddphysts & (PHY_LINK_SPEED100 | PHY_LINK_FULLDUPLX | PHY_LINK_CONNECTED)))
-        {
-            olddphysts = physts;
-            physts |= PHY_LINK_CHANGED;
-        }
+    if ( ( physts & ( PHY_LINK_SPEED100 | PHY_LINK_FULLDUPLX | PHY_LINK_CONNECTED ) ) !=
+            ( olddphysts & ( PHY_LINK_SPEED100 | PHY_LINK_FULLDUPLX | PHY_LINK_CONNECTED ) ) )
+    {
+        olddphysts = physts;
+        physts |= PHY_LINK_CHANGED;
+    }
 }
 
 /* Initialize the KSZ8081RNA PHY */
-uint32_t lpc_phy_init(bool rmii, p_msDelay_func_t pDelayMsFunc)
+uint32_t lpc_phy_init( bool rmii, p_msDelay_func_t pDelayMsFunc )
 {
     uint16_t tmp;
     int32_t i;
@@ -196,39 +196,42 @@ uint32_t lpc_phy_init(bool rmii, p_msDelay_func_t pDelayMsFunc)
 
     /* Only first read and write are checked for failure */
     /* Put the KSZ8081RNA in reset mode and wait for completion */
-    if (lpc_mii_write(KSZ_BMCR_REG, KSZ_RESET) != SUCCESS)
-        {
-            return ERROR;
-        }
+    if ( lpc_mii_write( KSZ_BMCR_REG, KSZ_RESET ) != SUCCESS )
+    {
+        return ERROR;
+    }
 
     i = 400;
-    while (i > 0)
-        {
-            pDelayMs(1);
-            if (lpc_mii_read(KSZ_BMCR_REG, &tmp) != SUCCESS)
-                {
-                    return ERROR;
-                }
 
-            if (!(tmp & (KSZ_RESET | KSZ_POWER_DOWN)))
-                {
-                    i = -1;
-                }
-            else
-                {
-                    i--;
-                }
-        }
-    if (lpc_mii_write(KSZ_BMCR_REG, KSZ_RESET) != SUCCESS)
+    while ( i > 0 )
+    {
+        pDelayMs( 1 );
+
+        if ( lpc_mii_read( KSZ_BMCR_REG, &tmp ) != SUCCESS )
         {
             return ERROR;
         }
+
+        if ( !( tmp & ( KSZ_RESET | KSZ_POWER_DOWN ) ) )
+        {
+            i = -1;
+        }
+        else
+        {
+            i--;
+        }
+    }
+
+    if ( lpc_mii_write( KSZ_BMCR_REG, KSZ_RESET ) != SUCCESS )
+    {
+        return ERROR;
+    }
 
     /* Timeout? */
-    if (i == 0)
-        {
-            return ERROR;
-        }
+    if ( i == 0 )
+    {
+        return ERROR;
+    }
 
 #if 0
     /* Setup link based on configuration options */
@@ -248,13 +251,13 @@ uint32_t lpc_phy_init(bool rmii, p_msDelay_func_t pDelayMsFunc)
     tmp = KSZ_AUTONEG;
 #endif
 
-    lpc_mii_write(KSZ_BMCR_REG, tmp);
+    lpc_mii_write( KSZ_BMCR_REG, tmp );
 
     /* Enable RMII mode for PHY */
-    if (rmii)
-        {
-            lpc_mii_write(KSZ_PHY_OMSO_REG, KSZ_RMII_OVERRIDE);
-        }
+    if ( rmii )
+    {
+        lpc_mii_write( KSZ_PHY_OMSO_REG, KSZ_RMII_OVERRIDE );
+    }
 
     /* The link is not set active at this point, but will be detected later */
 
@@ -262,30 +265,32 @@ uint32_t lpc_phy_init(bool rmii, p_msDelay_func_t pDelayMsFunc)
 }
 
 /* Phy status update state machine */
-uint32_t lpcPHYStsPoll(void)
+uint32_t lpcPHYStsPoll( void )
 {
-    switch (phyustate)
-        {
-            default:
-            case 0:
-                /* Read BMSR to clear faults */
-                Chip_ENET_StartMIIRead(LPC_ETHERNET, KSZ_BMSR_REG);
-                physts &= ~PHY_LINK_CHANGED;
-                physts = physts | PHY_LINK_BUSY;
-                phyustate = 1;
-                break;
+    switch ( phyustate )
+    {
+        default:
+        case 0:
+            /* Read BMSR to clear faults */
+            Chip_ENET_StartMIIRead( LPC_ETHERNET, KSZ_BMSR_REG );
+            physts &= ~PHY_LINK_CHANGED;
+            physts = physts | PHY_LINK_BUSY;
+            phyustate = 1;
+            break;
 
-            case 1:
-                /* Wait for read status state */
-                if (!Chip_ENET_IsMIIBusy(LPC_ETHERNET))
-                    {
-                        /* Update PHY status */
-                        physts &= ~PHY_LINK_BUSY;
-                        lpc_update_phy_sts(Chip_ENET_ReadMIIData(LPC_ETHERNET));
-                        phyustate = 0;
-                    }
-                break;
-        }
+        case 1:
+
+            /* Wait for read status state */
+            if ( !Chip_ENET_IsMIIBusy( LPC_ETHERNET ) )
+            {
+                /* Update PHY status */
+                physts &= ~PHY_LINK_BUSY;
+                lpc_update_phy_sts( Chip_ENET_ReadMIIData( LPC_ETHERNET ) );
+                phyustate = 0;
+            }
+
+            break;
+    }
 
     return physts;
 }

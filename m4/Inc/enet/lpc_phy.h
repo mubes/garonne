@@ -66,7 +66,7 @@ extern "C" {
  * @note    This function can be called at any rate and will poll the the PHY status. Multiple
  * calls may be needed to determine PHY status.
  */
-uint32_t lpcPHYStsPoll(void);
+uint32_t lpcPHYStsPoll( void );
 
 /**
  * @brief   Initialize the PHY
@@ -77,9 +77,9 @@ uint32_t lpcPHYStsPoll(void);
  * wait for the PHY to detect a connected cable and remain busy. Use lpcPHYStsPoll to
  * detect cable insertion.
  */
-typedef void (*p_msDelay_func_t)(uint32_t);
+typedef void ( *p_msDelay_func_t )( uint32_t );
 
-uint32_t lpc_phy_init(bool rmii, p_msDelay_func_t pDelayMsFunc);
+uint32_t lpc_phy_init( bool rmii, p_msDelay_func_t pDelayMsFunc );
 
 /**
  * @}
