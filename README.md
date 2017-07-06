@@ -26,13 +26,13 @@ Tegra TK1 and full blown PCs.
 Its designed to be cheap to build, modify and crash....but to be a reasonably powerful
 and extensible platform at the same time.
 
-In the current implementation, for ease of access, the High Level Board minially a 
+In the current implementation, for ease of access, the High Level Board is minimally a 
 Raspberry Pi and the Low Level Board is a NXP LPCXpresso LPC4367 204MHz CORTEX-M4 + 2x
 CORTEX M0 which provides a significant amount of real time computing power. The HLB
 runs Linux, programmed in Python, and the LLB is based on FreeRTOS and is programmed
 in C. The Commander (that animates the system and provides objectives to be reached) can
 run on pretty much anything, but the simple code provided will work perfectly well on a
-second RaspberryPi.
+second RaspberryPi....you can even use Force Feedback wheels etc. for 'driving' the vehicle remotely.
 
 The project was orignally created by Technolution BV. It was first demonstrated at the 
 ITS World Congress in Bordeaux in 2016 (Hence, the codename 'Garonne', the river that 
@@ -90,11 +90,13 @@ jumpers, and some nylon m3 standoff pillars. In the Wiring directory you will fi
 
 ![Screenshot](https://raw.githubusercontent.com/mubes/garonne/master/Wiring/Signalling.png)
 
+Higher resolution versions of these diagrams can be found in the `Wiring` directory in PDF format.
+
 Low Level Board
 ---------------
 Bringing up the Low Level Board (LLB) requires the use of the GNU ARM gcc compiler suite. You can download that directly from [ARM] (https://developer.arm.com/open-source/gnu-toolchain/gnu-rm) and then use something like GNU ARM Eclipse to fold it into an IDE (http://gnuarmeclipse.github.io/) or, the easier option, is to head over to NXP and download either LPCXpresso or MPUXpresso from their site. MCUXpresso is the more recent suite, and is arguably more powerful, but it's a new product and at the time of writing we found LPCXpresso 8.2.2 to be more solid than MCUXpresso 10.0.0....but the letter is likely to be updated frequently, so YMMV.  Having said that, as we've brought up the M0 cores, we've not found either of these suites to be great, so we've installed the Segger JLink firmware (available for download from the [Segger Site](https://www.segger.com/jlink-lpcxpresso-ob.html) ) and used it with the [GNU Arm Eclipse](http://gnuarmeclipse.github.io/) setup. This makes for quite an impressively capable setup.
 
-The code for the LLB is well commented and will build directly from the Makefile with a `make` command...or import it as a makefile project into one of the aforementioned environments.  It will flash directly onto the LLB using the built in debugger.
+The code for the LLB is well commented and will build directly from the Makefile with a `make` command...or import it as a makefile project into one of the aforementioned environments.  It will flash directly onto the LLB using the built in debugger. You've got to go a _long_ way out of your way to brick this setup...indeed, I doubt you could do it without deliberately setting out to do so.
 
 Structure of the LLB Code
 -------------------------
@@ -166,7 +168,7 @@ The code for the various CPUs lives in subdirectories. For now we only concern o
                                                                
 * `llb_init.c` & `startup_lpc43xx.c`: Deal with the booting of the system.
 
-There is code that runs on the M0 board for interfacing to the Ultrawideband radio and a Quaterion structure for the 9D sensor. I'm afraid we can't make the source code for these files openly availble but you're free to use the code with the Garonne platform (See the licence in the `bindist` directory, where the binary blob also lives).
+There is code that runs on the M0 board for interfacing to the Ultrawideband radio and a Quaterion structure for the 9D sensor. I'm afraid we can't make the source code for these files openly availble but you're free to use the code with the Garonne platform (See the licence in the `bindist` directory, where the binary blob also lives).  If you _do_ need access to the source for this module then drop us a note and we will sort something out...but we've got to eat too!
 
 High Level Board
 ----------------
