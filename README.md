@@ -23,13 +23,16 @@ and a High Level Board (HLB) which performs the 'reasoning' behind the actions t
 system takes.  Many different platforms have been used for the HLB and the LLB including
 Tegra TK1 and full blown PCs. 
 
-Its designed to be cheap to build, modify and crash....but to be a reasonably powerful and extensible platform at the same time.
+Its designed to be cheap to build, modify and crash....but to be a reasonably powerful
+and extensible platform at the same time.
 
 In the current implementation, for ease of access, the High Level Board minially a 
 Raspberry Pi and the Low Level Board is a NXP LPCXpresso LPC4367 204MHz CORTEX-M4 + 2x
 CORTEX M0 which provides a significant amount of real time computing power. The HLB
 runs Linux, programmed in Python, and the LLB is based on FreeRTOS and is programmed
-in C. The Commander (that animates the system and provides objectives to be reached) can run on pretty much anything, but the simple code provided will work perfectly well on a second RaspberryPi.
+in C. The Commander (that animates the system and provides objectives to be reached) can
+run on pretty much anything, but the simple code provided will work perfectly well on a
+second RaspberryPi.
 
 The project was orignally created by Technolution BV. It was first demonstrated at the 
 ITS World Congress in Bordeaux in 2016 (Hence, the codename 'Garonne', the river that 
@@ -38,18 +41,20 @@ Technolution and is now released for open use.
 
 Getting Started
 ===============
-Generally speaking, a Garonne system will consist of at least one vehicle, a control platform (consisting of a Low Level Board (LLB) and a High Level Board (HLB) and a command platform, which is generally remote. All of this runs on a physical vehicle which ends up looking something like this;
+Generally speaking, a Garonne system will consist of at least one vehicle, a control platform
+(consisting of a Low Level Board (LLB) and a High Level Board (HLB) and a command platform,
+which is generally remote. All of this runs on a physical vehicle which ends up
+looking something like this;
 
-![Screenshot](https://raw.githubusercontent.com/mubes/garonne/master/Pics/Vehicle.jpg)
-
-(Note: This photo is a proto-proto-type, so the wiring colours don't nessesarily match up. I'll update it later).
+![Screenshot](https://raw.githubusercontent.com/mubes/garonne/master/Pics/callout.png)
 
 
 ...so, let's get started;
 
 Physical Vehicle
 ----------------
-Generally speaking, you can use most remote controlled cars for the physical vehicle, the requirements are not very onerous. 
+Generally speaking, you can use most remote controlled cars for the physical vehicle, the requirements
+are not very onerous. 
 
 The shopping list looks like the following (Full list of compnents and quantities is at the foot of this note);
 
